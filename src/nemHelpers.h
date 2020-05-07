@@ -41,26 +41,14 @@ static const int32_t MAIN_NETWORK_VERSION = 0x68000001;
 static const int32_t TEST_NETWORK_VERSION = 0x98000001;
 static const int32_t MINJIN_NETWORK_VERSION = 0x60000001;
 
-static const uint32_t GENERATION_HASH0 = 0x44D2225B;
-static const uint32_t GENERATION_HASH1 = 0x8932C9A9;
-static const uint32_t GENERATION_HASH2 = 0x6DCB1350;
-static const uint32_t GENERATION_HASH3 = 0x8CBCDFFA;
-static const uint32_t GENERATION_HASH4 = 0x9A9663BF;
-static const uint32_t GENERATION_HASH5 = 0xBA2354FE;
-static const uint32_t GENERATION_HASH6 = 0xEC8FCFCB;
-static const uint32_t GENERATION_HASH7 = 0x7E19846C;
-//rootNamespaceRentalFeePerBlock = 1'000'000
-//childNamespaceRentalFee = 1'000'000
-
-static const uint16_t NEMV1_TRANSFER = 0x101;
-static const uint16_t NEMV1_IMPORTANCE_TRANSFER = 0x801;
-static const uint16_t NEMV1_MULTISIG_MODIFICATION = 0x1001;
-static const uint16_t NEMV1_MULTISIG_SIGNATURE = 0x1002;
-static const uint16_t NEMV1_MULTISIG_TRANSACTION = 0x1004;
-static const uint16_t NEMV1_PROVISION_NAMESPACE = 0x2001;
-static const uint16_t NEMV1_MOSAIC_DEFINITION = 0x4001;
-static const uint16_t NEMV1_MOSAIC_SUPPLY_CHANGE = 0x4002;
-static const uint16_t NEMV1_MOSAIC_SUPPLY = 0x4002;
+static const uint32_t GENERATION_HASH0 = 0xACECD90E;
+static const uint32_t GENERATION_HASH1 = 0x7B248E01;
+static const uint32_t GENERATION_HASH2 = 0x2803228A;
+static const uint32_t GENERATION_HASH3 = 0xDB4424F0;
+static const uint32_t GENERATION_HASH4 = 0xD966D241;
+static const uint32_t GENERATION_HASH5 = 0x49B72E58;
+static const uint32_t GENERATION_HASH6 = 0x987D2BF2;
+static const uint32_t GENERATION_HASH7 = 0xF2AF03C4;
 
 #define TRANSFER 0x4154
 #define REGISTER_NAMESPACE 0x414E
