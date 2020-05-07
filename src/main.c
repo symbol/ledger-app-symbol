@@ -738,6 +738,26 @@ void display_tx(uint8_t *raw_tx, uint16_t dataLength,
                 false
             ); 
             break;
+        case ADDRESS_ALIAS:
+            SPRINTF(txTypeName, "%s", "Address alias");
+            parse_address_alias_tx(raw_tx + disIndex + networkGenerationHashLength,
+                &ux_step_count,
+                detailName,
+                extraInfo,
+                fullAddress,
+                false
+            );
+            break;
+        case MOSAIC_ALIAS:
+            SPRINTF(txTypeName, "%s", "Mosaic alias");
+            parse_mosaic_alias_tx(raw_tx + disIndex + networkGenerationHashLength,
+                &ux_step_count,
+                detailName,
+                extraInfo,
+                fullAddress,
+                false
+            );
+            break;
         case REGISTER_NAMESPACE:
             SPRINTF(txTypeName, "%s", "Namespace registation");
             parse_provision_namespace_tx (raw_tx + disIndex + networkGenerationHashLength,

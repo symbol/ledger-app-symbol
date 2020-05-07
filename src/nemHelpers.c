@@ -479,6 +479,123 @@ void parse_mosaic_supply_change_tx (unsigned char raw_tx[],
     print_amount((uint64_t *)fee, 6, "xym", &extraInfo[1]);
 }
 
+void parse_address_alias_tx (unsigned char raw_tx[],
+    unsigned int* ux_step_count,
+    char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
+    char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
+    char fullAddress[NEM_ADDRESS_LENGTH],
+    bool isMultisig){
+
+    //Namespace
+    uint16_t namespaceIdIndex;
+    uint32_t lowNamespaceId;
+    uint32_t highNamespaceId;
+
+    //Aliased Address
+    uint16_t aliasedAddressIndex;
+    uint8_t tmpAddress[41];
+
+    //Alias Type
+    uint16_t typeOfAliasIndex;
+    uint8_t typeOfAlias;
+
+    // Fee
+    uint16_t feeIndex;
+    uint64_t fee;
+
+    *ux_step_count = 5;
+
+    //Fee
+    SPRINTF(detailName[3], "%s", "Fee");
+    feeIndex = 2+2;
+    fee = getUint64(reverseBytes(&raw_tx[feeIndex], 8));
+    print_amount(fee, 6, "xym", &extraInfo[2]);
+
+    // Namespace ID
+    SPRINTF(detailName[1], "%s", "Namespace ID");
+    namespaceIdIndex = isMultisig ? 2+2: 2+2+8+8;
+    lowNamespaceId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex], 4));
+    highNamespaceId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex+4], 4));
+    SPRINTF(extraInfo[0], "%x%x", highNamespaceId, lowNamespaceId);
+
+    //Aliased Address
+    SPRINTF(detailName[0], "%s", "Aliased Addr.");
+    aliasedAddressIndex = namespaceIdIndex + 8;
+    base32_encode(&raw_tx[aliasedAddressIndex], 25, &tmpAddress, 40);
+    tmpAddress[40] = '\0';
+    os_memset(fullAddress, 0, sizeof(fullAddress));
+    os_memmove((void *)fullAddress, tmpAddress, 41);
+
+    // Alias type
+    SPRINTF(detailName[2], "%s", "Alias type");
+    typeOfAliasIndex = aliasedAddressIndex + 25;
+    typeOfAlias = raw_tx[typeOfAliasIndex];
+    if (typeOfAlias == 0x00) {
+        SPRINTF(extraInfo[1], "%s", "Link address");
+    } else if (typeOfAlias == 0x01) {
+        SPRINTF(extraInfo[1], "%s", "Unlink address");
+    }
+}
+
+void parse_mosaic_alias_tx (unsigned char raw_tx[],
+    unsigned int* ux_step_count,
+    char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
+    char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
+    char extraInfo_0[NEM_ADDRESS_LENGTH],
+    bool isMultisig){
+
+    //Namespace
+    uint16_t namespaceIdIndex;
+    uint32_t lowNamespaceId;
+    uint32_t highNamespaceId;
+
+    //Mosaic ID
+    uint16_t mosaicIdIndex;
+    uint32_t lowMosaicId;
+    uint32_t highMosaicId;
+
+    //Alias Type
+    uint16_t typeOfAliasIndex;
+    uint8_t typeOfAlias;
+
+    // Fee
+    uint16_t feeIndex;
+    uint64_t fee;
+
+    *ux_step_count = 5;
+
+    //Fee
+    SPRINTF(detailName[3], "%s", "Fee");
+    feeIndex = 2+2;
+    fee = getUint64(reverseBytes(&raw_tx[feeIndex], 8));
+    print_amount(fee, 6, "xym", &extraInfo[2]);
+
+    // Namespace ID
+    SPRINTF(detailName[1], "%s", "Namespace ID");
+    namespaceIdIndex = isMultisig ? 2+2: 2+2+8+8;
+    lowNamespaceId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex], 4));
+    highNamespaceId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex+4], 4));
+    SPRINTF(extraInfo[0], "%x%x", highNamespaceId, lowNamespaceId);
+
+    // Mosaic ID
+    SPRINTF(detailName[2], "%s", "Mosaic ID");
+    mosaicIdIndex = namespaceIdIndex + 8;
+    lowMosaicId = getUint32(reverseBytes(&raw_tx[mosaicIdIndex], 4));
+    highMosaicId = getUint32(reverseBytes(&raw_tx[mosaicIdIndex+4], 4));
+    SPRINTF(extraInfo[1], "%x%x", highMosaicId, lowMosaicId);
+
+    // Alias type
+    SPRINTF(detailName[0], "%s", "Alias type");
+    typeOfAliasIndex = mosaicIdIndex + 8;
+    typeOfAlias = raw_tx[typeOfAliasIndex];
+    os_memset(extraInfo_0, 0, sizeof(extraInfo_0));
+    if (typeOfAlias == 0x00) {
+        os_memmove((void *)extraInfo_0, "Link a mosaic to a namespace", 41);
+    }  else if (typeOfAlias == 0x01) {
+        os_memmove((void *)extraInfo_0, "Unlink a mosaic from a namespace", 41);
+    }
+}
+
 void parse_provision_namespace_tx (unsigned char raw_tx[],
     unsigned int* ux_step_count, 
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],

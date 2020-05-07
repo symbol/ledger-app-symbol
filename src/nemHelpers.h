@@ -153,6 +153,22 @@ void parse_mosaic_supply_change_tx (unsigned char raw_tx[],
     bool isMultisig
 );
 
+void parse_address_alias_tx (unsigned char raw_tx[],
+    unsigned int* ux_step_count,
+    char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
+    char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
+    char fullAddress[NEM_ADDRESS_LENGTH],
+    bool isMultisig
+);
+
+void parse_mosaic_alias_tx (unsigned char raw_tx[],
+    unsigned int* ux_step_count,
+    char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
+    char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
+    char fullAddress[NEM_ADDRESS_LENGTH],
+    bool isMultisig
+);
+
 void parse_provision_namespace_tx (unsigned char raw_tx[],
     unsigned int* ux_step_count, 
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
