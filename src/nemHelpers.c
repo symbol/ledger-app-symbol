@@ -245,12 +245,12 @@ void hex2String(uint8_t *inBytes, uint8_t inLen, char *out) {
 }
 
 void parse_transfer_tx (unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char fullAddress[NEM_ADDRESS_LENGTH],
     bool isMultisig) {
-    
+
     //Recipient Address
     uint16_t recipientAddressIndex;
     uint8_t tmpAddress[41];
@@ -293,10 +293,10 @@ void parse_transfer_tx (unsigned char raw_tx[],
     }
 
     //Mosaic
-    SPRINTF(detailName[3], "%s", "Mosaic");
+    SPRINTF(detailName[3], "%s", "Mosaics");
     numMosaicIndex = isMultisig ? 2+2+25: 2+2+8+8+25;
     numMosaic = raw_tx[numMosaicIndex];
-    SPRINTF(extraInfo[2], "<find %d mosaics>", numMosaic);
+    SPRINTF(extraInfo[2], "Found %d txs", numMosaic);
 
     offset  = isMultisig ? 2+2+25+1+2+4 : 2+2+8+8+25+1+2+4;
 
@@ -310,14 +310,14 @@ void parse_transfer_tx (unsigned char raw_tx[],
         amount = getUint64(reverseBytes(&raw_tx[offset], 8));
         offset +=8;
 
-        if ((highMosaicId == 0x747B276C) && (lowMosaicId == 0x30626442)) {
+        if ((highMosaicId == 0x519FC24B) && (lowMosaicId == 0x9223E0B4)) {
             //xymbol.xym
             SPRINTF(detailName[4+index], "XYM");
             print_amount(amount, 6, "xym", &extraInfo[3+index]); // mosaicDivisibility = 6
         } else {
             //unkown mosaic
             SPRINTF(extraInfo[3+index], "%x%x", highMosaicId, lowMosaicId);
-            print_amount(amount*10, 1, "raw", &detailName[4+index]); // mosaicDivisibility = 0
+            print_amount(amount*10, 1, ": MicroUnits", &detailName[4+index]); // mosaicDivisibility = 0
         }
     }
 
@@ -341,7 +341,7 @@ void parse_transfer_tx (unsigned char raw_tx[],
             }
         } else if (msgType == 0x01) {
             SPRINTF(extraInfo[1], "%s\0", "<encrypted msg>");
-        }        
+        }
     }
 }
 
@@ -787,10 +787,10 @@ void parse_multisig_account_modification_tx (unsigned char raw_tx[],
     uint8_t numPublicKeyDeletions;
     uint16_t publicKeyDeletionsIndex;
     //cosignatory public key
-    char publicKey[65]; 
+    char publicKey[65];
 
     //display
-    uint8_t displayOffet;
+    uint8_t displayOffset;
 
     *ux_step_count = 4;
     //min Removal Delta
@@ -806,7 +806,6 @@ void parse_multisig_account_modification_tx (unsigned char raw_tx[],
     {
         os_memmove((void *)extraInfo_0, "Not change", 41);
     }
-    
 
     //min Approval Delta
     SPRINTF(detailName[1], "%s", "Min Approval");
@@ -825,36 +824,36 @@ void parse_multisig_account_modification_tx (unsigned char raw_tx[],
     numPublicKeyAdditionsIndex = minApprovalDeltaIndex+1;
     numPublicKeyAdditions = raw_tx[numPublicKeyAdditionsIndex];
     publicKeyAdditionsIndex = numPublicKeyAdditionsIndex+1+1+4;
-    displayOffet = 3;
+    displayOffset = 3;
     for (uint8_t index = 0; index < numPublicKeyAdditions; index++) {
         *ux_step_count = *ux_step_count + 1;
         //Top line
-        SPRINTF(detailName[index + displayOffet], "%s (%d/%d)", "Add", index+1, numPublicKeyAdditions);
+        SPRINTF(detailName[index + displayOffset], "%s (%d/%d)", "Add", index+1, numPublicKeyAdditions);
         //Bottom line
         hex2String(&raw_tx[publicKeyAdditionsIndex], 32, publicKey);
         publicKeyAdditionsIndex += 32;
-        os_memset(extraInfo[index + displayOffet -1], 0, sizeof(extraInfo[index + displayOffet -1]));
-        os_memmove((void *)extraInfo[index + displayOffet -1], publicKey, 6);
-        os_memmove((void *)(extraInfo[index + displayOffet -1] + 6), "~", 1);
-        os_memmove((void *)(extraInfo[index + displayOffet -1] + 6 + 1), publicKey + 64 - 4, 4);        
+        os_memset(extraInfo[index + displayOffset -1], 0, sizeof(extraInfo[index + displayOffset -1]));
+        os_memmove((void *)extraInfo[index + displayOffset -1], publicKey, 5);
+        os_memmove((void *)(extraInfo[index + displayOffset -1] + 5), "..", 2);
+        os_memmove((void *)(extraInfo[index + displayOffset -1] + 5 + 2), publicKey + 64 - 4, 4);
     }
 
     //public Key Deletions Count
     numPublicKeyDeletionsIndex = numPublicKeyAdditionsIndex+1;
     numPublicKeyDeletions = raw_tx[numPublicKeyDeletionsIndex];
     publicKeyDeletionsIndex = publicKeyAdditionsIndex;
-    displayOffet = 3 + numPublicKeyAdditions;
+    displayOffset = 3 + numPublicKeyAdditions;
     for (uint8_t index = 0; index < numPublicKeyDeletions; index++) {
         *ux_step_count = *ux_step_count + 1;
         //Top line
-        SPRINTF(detailName[index + displayOffet], "%s (%d/%d)", "Del", index+1, numPublicKeyDeletions);
+        SPRINTF(detailName[index + displayOffset], "%s (%d/%d)", "Del", index+1, numPublicKeyDeletions);
         //Bottom line
         hex2String(&raw_tx[publicKeyDeletionsIndex], 32, publicKey);
         publicKeyDeletionsIndex += 32;
-        os_memset(extraInfo[index + displayOffet - 1], 0, sizeof(extraInfo[index + displayOffet -1]));
-        os_memmove((void *)extraInfo[index + displayOffet -1], publicKey, 6);
-        os_memmove((void *)(extraInfo[index + displayOffet -1] + 6), "~", 1);
-        os_memmove((void *)(extraInfo[index + displayOffet -1] + 6 + 1), publicKey + 64 - 4, 4);        
+        os_memset(extraInfo[index + displayOffset - 1], 0, sizeof(extraInfo[index + displayOffset -1]));
+        os_memmove((void *)extraInfo[index + displayOffset -1], publicKey, 5);
+        os_memmove((void *)(extraInfo[index + displayOffset -1] + 5), "..", 2);
+        os_memmove((void *)(extraInfo[index + displayOffset -1] + 5 + 2), publicKey + 64 - 4, 4);
     }
 }
 
