@@ -620,7 +620,8 @@ void parse_provision_namespace_tx (unsigned char raw_tx[],
 
     //Parent Namespace
     uint16_t namespaceIdIndex;
-    uint64_t namespaceId;
+    uint32_t lowParentNamespaceId;
+    uint32_t highParentNamespaceId;
 
     //Name
     uint16_t nameSizeIndex;
@@ -635,9 +636,9 @@ void parse_provision_namespace_tx (unsigned char raw_tx[],
         //Id, Parent namespace identifier is required for subnamespaces.
         SPRINTF(detailName[2], "%s", "Parent ID");
         namespaceIdIndex = isMultisig ? 2+2+8: 2+2+8+8+8;
-        uint32_t lowParentId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex], 4));
-        uint32_t highParentId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex+4], 4));
-        SPRINTF(extraInfo[1], "%x%x", highParentId, lowParentId);
+        lowParentNamespaceId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex], 4));
+        highParentNamespaceId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex+4], 4));
+        SPRINTF(extraInfo[1], "%x%x", highParentNamespaceId, lowParentNamespaceId);
     } else {
         //Duration
         SPRINTF(detailName[2], "%s", "Duration");
