@@ -118,7 +118,7 @@ char hex2Ascii(uint8_t input);
 void hex2String(uint8_t *inBytes, uint8_t inLen, char *out);
 
 void parse_transfer_tx (unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char fullAddress[NEM_ADDRESS_LENGTH],
@@ -126,7 +126,7 @@ void parse_transfer_tx (unsigned char raw_tx[],
 );
 
 void parse_mosaic_definition_tx (unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char fullAddress[NEM_ADDRESS_LENGTH],
@@ -134,7 +134,7 @@ void parse_mosaic_definition_tx (unsigned char raw_tx[],
 );
 
 void parse_mosaic_supply_change_tx (unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char fullAddress[NEM_ADDRESS_LENGTH],
@@ -158,7 +158,7 @@ void parse_mosaic_alias_tx (unsigned char raw_tx[],
 );
 
 void parse_provision_namespace_tx (unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char fullAddress[NEM_ADDRESS_LENGTH],
@@ -167,7 +167,7 @@ void parse_provision_namespace_tx (unsigned char raw_tx[],
 
 void parse_aggregate_complete_tx (
     unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char txTypeName[30],
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
@@ -177,7 +177,7 @@ void parse_aggregate_complete_tx (
 
 void parse_aggregate_bonded_tx (
     unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char txTypeName[30],
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
@@ -187,7 +187,7 @@ void parse_aggregate_bonded_tx (
 
 void parse_multisig_account_modification_tx (
     unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char extraInfo_0[NEM_ADDRESS_LENGTH],
@@ -196,7 +196,7 @@ void parse_multisig_account_modification_tx (
 
 void parse_hash_lock_tx (
     unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char extraInfo_0[NEM_ADDRESS_LENGTH],

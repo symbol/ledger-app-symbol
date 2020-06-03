@@ -27,7 +27,7 @@ static const uint8_t AMOUNT_MAX_SIZE = 17;
 uint8_t readNetworkIdFromBip32path(uint32_t bip32Path[]) {
     uint8_t outNetworkId;
     switch(bip32Path[2]) {
-        case 0x80000068: 
+        case 0x80000068:
             outNetworkId = 104; //N: mainnet
             break;
         case 0x80000098:
@@ -83,8 +83,8 @@ void print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out)
             buffer[i] = '.';
             if (dVal == 0) {
                 i += 1;
-                buffer[i] = '0'; 
-            }           
+                buffer[i] = '0';
+            }
         }
         if (i >= AMOUNT_MAX_SIZE) {
             THROW(0x6700);
@@ -137,14 +137,14 @@ void to_nem_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t in
 
     if ((inPublicKey->W[32] & 1) != 0) {
         outNemPublicKey[31] |= 0x80;
-    }    
+    }
 
     cx_sha3_t hash1;
     cx_sha3_t temphash;
-    
+
     cx_sha3_init(&hash1, 256);
     cx_sha3_init(&temphash, 256);
-    
+
     unsigned char buffer1[32];
     cx_hash(&hash1.header, CX_LAST, outNemPublicKey, 32, buffer1);
     unsigned char buffer2[20];
@@ -156,7 +156,7 @@ void to_nem_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t in
     rawAddress[0] = inNetworkId;   //104,,,,,
     //step2: add ripemd160 hash
     os_memmove(rawAddress + 1, buffer2, sizeof(buffer2));
-    
+
     unsigned char buffer3[32];
     cx_hash(&temphash.header, CX_LAST, rawAddress, 21, buffer3);
     //step3: add checksum
@@ -181,7 +181,7 @@ void public_key_to_address(uint8_t inNetworkId, uint8_t *inNemPublicKey, unsigne
     rawAddress[0] = inNetworkId;   //104,,,,,
     //step2: add ripemd160 hash
     os_memmove(rawAddress + 1, buffer2, sizeof(buffer2));
-    
+
     unsigned char buffer3[32];
     cx_hash(&temphash.header, CX_LAST, rawAddress, 21, buffer3);
     //step3: add checksum
@@ -204,13 +204,13 @@ void clean_raw_tx(unsigned char *raw_tx) {
 
 int compare_strings (char str1[], char str2[]) {
     int index = 0;
- 
+
     while (str1[index] == str2[index]) {
         if (str1[index] == '\0' || str2[index] == '\0')
             break;
         index++;
     }
-    
+
     if (str1[index] == '\0' && str2[index] == '\0')
         return 0;
     else
@@ -219,11 +219,11 @@ int compare_strings (char str1[], char str2[]) {
 
 int string_length(char str[]) {
     int index = 0;
- 
+
     while (str[index] != '\0') {
         str++;
     }
- 
+
     return index;
 }
 
@@ -232,7 +232,7 @@ char hex2Ascii(uint8_t input){
     return input > 9 ? (char)(input + 87) : (char)(input + 48);
 }
 
-/** Convert hex string to character string 
+/** Convert hex string to character string
     outLen = inLen*2 + 1 */
 void hex2String(uint8_t *inBytes, uint8_t inLen, char *out) {
     uint8_t index;
@@ -346,7 +346,7 @@ void parse_transfer_tx (unsigned char raw_tx[],
 }
 
 void parse_mosaic_definition_tx (unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char extraInfo_0[NEM_ADDRESS_LENGTH],
@@ -429,7 +429,7 @@ void parse_mosaic_definition_tx (unsigned char raw_tx[],
 }
 
 void parse_mosaic_supply_change_tx (unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char fullAddress[NEM_ADDRESS_LENGTH],
@@ -467,7 +467,7 @@ void parse_mosaic_supply_change_tx (unsigned char raw_tx[],
     supplyType = raw_tx[supplyTypeIndex];
     if (supplyType == 0x01) {   //Increase supply
         SPRINTF(detailName[0], "%s", "Increase");
-    } else { //Decrease supply 
+    } else { //Decrease supply
         SPRINTF(detailName[0], "%s", "Decrease");
     }
     //Fee
@@ -597,7 +597,7 @@ void parse_mosaic_alias_tx (unsigned char raw_tx[],
 }
 
 void parse_provision_namespace_tx (unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char extraInfo_0[NEM_ADDRESS_LENGTH],
@@ -626,7 +626,7 @@ void parse_provision_namespace_tx (unsigned char raw_tx[],
     //Name
     uint16_t nameSizeIndex;
     uint8_t nameSize;
-    
+
     *ux_step_count = 4;
     //Type; 0: Root namespace, 1: Child namespace
     registrationTypeIndex = 20+8+8;
@@ -649,7 +649,7 @@ void parse_provision_namespace_tx (unsigned char raw_tx[],
         min = (blockDuration % 240) / 4;
         SPRINTF(extraInfo[1], "%d%s%d%s%d%s", day, "d ", hour, "h ", min, "m");
     }
-    
+
     //Name
     SPRINTF(detailName[0], "%s", "Name");
     nameSizeIndex = 2+2+8+8+8+8+1;
@@ -665,7 +665,7 @@ void parse_provision_namespace_tx (unsigned char raw_tx[],
 
 void parse_aggregate_complete_tx (
     unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char txTypeName[30],
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
@@ -681,19 +681,19 @@ void parse_aggregate_complete_tx (
     *ux_step_count = 1;
 
     switch(txType){
-        case TRANSFER: //Transfer 
+        case TRANSFER: //Transfer
             os_memmove((void *)txTypeName, "Multisig TX", 12);
             //Fee
             SPRINTF(detailName[1], "%s", "Fee");
             print_amount(fee, 6, "xym", &extraInfo[0]);
             parse_transfer_tx (
                 raw_tx + txTypeIndex - 2,
-                ux_step_count, 
+                ux_step_count,
                 detailName,
                 extraInfo,
                 extraInfo_0,
                 true
-            ); 
+            );
             break;
         case MOSAIC_DEFINITION:
             os_memmove((void *)txTypeName, "Create Mosaic", 14);
@@ -715,7 +715,7 @@ void parse_aggregate_complete_tx (
 
 void parse_aggregate_bonded_tx (
     unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char txTypeName[30],
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
@@ -730,27 +730,27 @@ void parse_aggregate_bonded_tx (
     uint16_t txType = getUint16(reverseBytes(&raw_tx[txTypeIndex], 2));
     os_memset(txTypeName, 0, sizeof(txTypeName));
     switch(txType){
-        case TRANSFER: //Transfer 
+        case TRANSFER: //Transfer
             os_memmove((void *)txTypeName, "Multisig TX", 12);
             //Fee
             SPRINTF(detailName[1], "%s", "Fee");
             print_amount(fee, 6, "xym", &extraInfo[0]);
             parse_transfer_tx (
                 raw_tx + txTypeIndex - 2,
-                ux_step_count, 
+                ux_step_count,
                 detailName,
                 extraInfo,
                 extraInfo_0,
-                true); 
+                true);
             break;
         case MODIFY_MULTISIG_ACCOUNT:
             os_memmove((void *)txTypeName, "Multisig Modify", 16);
             // Fee
-            SPRINTF(detailName[2], "%s", "Fee");            
+            SPRINTF(detailName[2], "%s", "Fee");
             print_amount(fee, 6, "xym", &extraInfo[1]);
             parse_multisig_account_modification_tx (
                 raw_tx + txTypeIndex - 2,
-                ux_step_count, 
+                ux_step_count,
                 detailName,
                 extraInfo,
                 extraInfo_0,
@@ -860,7 +860,7 @@ void parse_multisig_account_modification_tx (unsigned char raw_tx[],
 
 void parse_hash_lock_tx (
     unsigned char raw_tx[],
-    unsigned int* ux_step_count, 
+    unsigned int* ux_step_count,
     char detailName[MAX_PRINT_DETAIL_NAME_SCREEN][MAX_PRINT_DETAIL_NAME_LENGTH],
     char extraInfo[MAX_PRINT_EXTRA_INFO_SCREEN][MAX_PRINT_EXTRA_INFOR_LENGTH],
     char extraInfo_0[NEM_ADDRESS_LENGTH],

@@ -73,19 +73,19 @@ typedef struct txContent_t {
 typedef struct publicKeyContext_t {
     cx_ecfp_public_key_t publicKey;
     uint8_t networkId;
-    uint8_t algo;    
+    uint8_t algo;
     uint8_t nemPublicKey[32];
     uint8_t address[40];
     uint8_t pathLength;
     uint32_t bip32Path[MAX_BIP32_PATH];
 } publicKeyContext_t;
 
-typedef struct transactionContext_t {  
+typedef struct transactionContext_t {
     uint8_t pathLength;
     uint8_t networkId;
     uint8_t algo;
     uint8_t nemPublicKey[32];
-    uint32_t bip32Path[MAX_BIP32_PATH];    
+    uint32_t bip32Path[MAX_BIP32_PATH];
     uint32_t rawTxLength;
 } transactionContext_t;
 
@@ -243,10 +243,10 @@ unsigned int ui_address_prepro(const bagl_element_t *element) {
             case 1:
                 UX_CALLBACK_SET_INTERVAL(2000);
                 break;
-            case 2:                
+            case 2:
                 //back home
                 //UX_CALLBACK_SET_INTERVAL(MAX(
-                //    3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));     
+                //    3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));
                 if(maxInterval == 0){
                     G_io_apdu_buffer[0] = 0x69; //0x9000 timeout
                     G_io_apdu_buffer[1] = 0x85;
@@ -257,7 +257,7 @@ unsigned int ui_address_prepro(const bagl_element_t *element) {
                 }else{
                     maxInterval--;
                     UX_CALLBACK_SET_INTERVAL(MAX(
-                        3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));                    
+                        3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));
                 }
                 break;
             }
@@ -376,46 +376,46 @@ unsigned int ui_approval_prepro(const bagl_element_t *element) {
         display = (ux_step == element->component.userid - 1) || (element->component.userid >= 0x02 && ux_step >= 1);
         if (display) {
             switch (element->component.userid) {
-            case 0x01:                           
-                UX_CALLBACK_SET_INTERVAL(2000);                
+            case 0x01:
+                UX_CALLBACK_SET_INTERVAL(2000);
                 break;
             case 0x02:
             case 0x12:
-                os_memmove(&tmp_element, element, sizeof(bagl_element_t));                
+                os_memmove(&tmp_element, element, sizeof(bagl_element_t));
                 display = ux_step - 1;
                 switch(display) {
                     case 0:
                     display_detail:
                         tmp_element.text = ui_approval_details[display][(element->component.userid)>>4];
                         break;
-                    case 1: 
-                    case 2: 
-                    case 3: 
-                    case 4: 
-                    case 5: 
-                    case 6:                     
-                    case 7:                     
-                    case 8:                     
-                    case 9:                   
-                    case 10:                     
-                    case 11:                     
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                    case 8:
+                    case 9:
+                    case 10:
+                    case 11:
                         if (display == (ux_step_count - 1)) {
-                            maxInterval--;//back home 
-                        }                     
+                            maxInterval--;//back home
+                        }
                         goto display_detail;
-                }                                    
+                }
                 UX_CALLBACK_SET_INTERVAL(MAX(
                     3000, 1000 + bagl_label_roundtrip_duration_ms(&tmp_element, 7)));
                 return &tmp_element;
             }
-        }      
+        }
     }
-    if(maxInterval < 0) { //back home     
+    if(maxInterval < 0) { //back home
         G_io_apdu_buffer[0] = 0x69; //0x9000 timeout
         G_io_apdu_buffer[1] = 0x85;
         // Send back the response, do not restart the event loop
         io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-        ui_idle();        
+        ui_idle();
     }
     return display;
 }
@@ -482,21 +482,21 @@ unsigned int io_seproxyhal_touch_tx_ok(const bagl_element_t *e) {
     uint32_t tx = 0;
 
     //Get keyseed
-    os_perso_derive_node_bip32(CX_CURVE_256K1, tmpCtx.transactionContext.bip32Path, tmpCtx.transactionContext.pathLength, privateKeyData, NULL);    
-    
+    os_perso_derive_node_bip32(CX_CURVE_256K1, tmpCtx.transactionContext.bip32Path, tmpCtx.transactionContext.pathLength, privateKeyData, NULL);
+
     cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
     tmpCtx.transactionContext.algo = CX_SHA512;
-    
+
     //signature 128
     G_io_apdu_buffer[tx++] = 128;
-    tx = cx_eddsa_sign(&privateKey, 
-                       CX_LAST, 
-                       tmpCtx.transactionContext.algo, 
+    tx = cx_eddsa_sign(&privateKey,
+                       CX_LAST,
+                       tmpCtx.transactionContext.algo,
                        raw_tx + 21,
-                       tmpCtx.transactionContext.rawTxLength, 
-                       NULL, 
-                       0, 
-                       G_io_apdu_buffer, 
+                       tmpCtx.transactionContext.rawTxLength,
+                       NULL,
+                       0,
+                       G_io_apdu_buffer,
                        NULL);
 
     os_memset(&privateKey, 0, sizeof(privateKey));
@@ -504,7 +504,7 @@ unsigned int io_seproxyhal_touch_tx_ok(const bagl_element_t *e) {
 
     G_io_apdu_buffer[tx++] = 0x90;
     G_io_apdu_buffer[tx++] = 0x00;
-    
+
     // Send back the response, do not restart the event loop
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
     // Display back the original UX
@@ -610,7 +610,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
     if ((p2Chain != P2_CHAINCODE) && (p2Chain != P2_NO_CHAINCODE)) {
         THROW(0x6B00);
     }
-   
+
     //Read and convert path's data
     for (i = 0; i < bip32PathLength; i++) {
         bip32Path[i] = (dataBuffer[0] << 24) | (dataBuffer[1] << 16) |
@@ -620,24 +620,24 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
 
     tmpCtx.publicKeyContext.networkId = readNetworkIdFromBip32path(bip32Path);
     tmpCtx.publicKeyContext.algo = CX_SHA512;
-    
-    //tmpCtx.publicKeyContext.getChaincode = (p2Chain == P2_CHAINCODE);   
+
+    //tmpCtx.publicKeyContext.getChaincode = (p2Chain == P2_CHAINCODE);
     os_perso_derive_node_bip32(CX_CURVE_256K1, bip32Path, bip32PathLength, privateKeyData, NULL);
     cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
-    cx_ecfp_generate_pair2(CX_CURVE_Ed25519, 
-                            &tmpCtx.publicKeyContext.publicKey, 
-                            &privateKey, 
-                            1, 
+    cx_ecfp_generate_pair2(CX_CURVE_Ed25519,
+                            &tmpCtx.publicKeyContext.publicKey,
+                            &privateKey,
+                            1,
                             tmpCtx.publicKeyContext.algo);
 
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
     os_memset(&privateKey, 0, sizeof(privateKey));
 
     to_nem_public_key_and_address(
-                                  &tmpCtx.publicKeyContext.publicKey, 
-                                  tmpCtx.publicKeyContext.networkId, 
-                                  tmpCtx.publicKeyContext.algo, 
-                                  &tmpCtx.publicKeyContext.nemPublicKey, 
+                                  &tmpCtx.publicKeyContext.publicKey,
+                                  tmpCtx.publicKeyContext.networkId,
+                                  tmpCtx.publicKeyContext.algo,
+                                  &tmpCtx.publicKeyContext.nemPublicKey,
                                   &tmpCtx.publicKeyContext.address
                                   );
 
@@ -648,10 +648,10 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
 
     // prepare for a UI based reply//
 #if defined(TARGET_NANOS)
-#if 0        
+#if 0
     snprintf(fullAddress, sizeof(fullAddress), " 0x%.*s ", 40,
              tmpCtx.publicKeyContext.address);
-#endif                 
+#endif
     ux_step = 0;
     ux_step_count = 2;
     maxInterval = MAX_UX_CALLBACK_INTERVAL + 1 + 1;
@@ -662,7 +662,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
     //end: Go show address on ledger
 }
 
-void display_tx(uint8_t *raw_tx, uint16_t dataLength, 
+void display_tx(uint8_t *raw_tx, uint16_t dataLength,
                 volatile unsigned int *flags, volatile unsigned int *tx ) {
     UNUSED(tx);
     uint8_t addressLength;
@@ -679,7 +679,7 @@ void display_tx(uint8_t *raw_tx, uint16_t dataLength,
             (raw_tx[3 + i*4] << 8) | (raw_tx[4 + i*4]);
     }
 
-    tmpCtx.transactionContext.networkId = readNetworkIdFromBip32path(tmpCtx.transactionContext.bip32Path);    
+    tmpCtx.transactionContext.networkId = readNetworkIdFromBip32path(tmpCtx.transactionContext.bip32Path);
 
     uint8_t disIndex = 21;
     uint8_t networkGenerationHashLength = 32;
@@ -708,35 +708,35 @@ void display_tx(uint8_t *raw_tx, uint16_t dataLength,
     }
 
     switch(txContent.txType){
-        case TRANSFER: //Transfer 
+        case TRANSFER: //Transfer
             SPRINTF(txTypeName, "%s", "Transfer TX");
             parse_transfer_tx (raw_tx + disIndex + networkGenerationHashLength,
-                &ux_step_count, 
+                &ux_step_count,
                 detailName,
                 extraInfo,
                 fullAddress,
                 false
-            ); 
+            );
             break;
         case MOSAIC_DEFINITION:
             SPRINTF(txTypeName, "%s", "Mosaic TX");
             parse_mosaic_definition_tx (raw_tx + disIndex + networkGenerationHashLength,
-                &ux_step_count, 
+                &ux_step_count,
                 detailName,
                 extraInfo,
                 fullAddress,
                 false
-            ); 
+            );
             break;
         case MOSAIC_SUPPLY_CHANGE:
             SPRINTF(txTypeName, "%s", "Mosaic Supply Change");
             parse_mosaic_supply_change_tx (raw_tx + disIndex + networkGenerationHashLength,
-                &ux_step_count, 
+                &ux_step_count,
                 detailName,
                 extraInfo,
                 fullAddress,
                 false
-            ); 
+            );
             break;
         case ADDRESS_ALIAS:
             SPRINTF(txTypeName, "%s", "Address alias");
@@ -761,7 +761,7 @@ void display_tx(uint8_t *raw_tx, uint16_t dataLength,
         case REGISTER_NAMESPACE:
             SPRINTF(txTypeName, "%s", "Namespace registation");
             parse_provision_namespace_tx (raw_tx + disIndex + networkGenerationHashLength,
-                &ux_step_count, 
+                &ux_step_count,
                 detailName,
                 extraInfo,
                 fullAddress,
@@ -771,7 +771,7 @@ void display_tx(uint8_t *raw_tx, uint16_t dataLength,
 
         case AGGREGATE_COMPLETE:
             parse_aggregate_complete_tx (raw_tx + disIndex + networkGenerationHashLength,
-                &ux_step_count, 
+                &ux_step_count,
                 txTypeName,
                 detailName,
                 extraInfo,
@@ -781,7 +781,7 @@ void display_tx(uint8_t *raw_tx, uint16_t dataLength,
             break;
         case AGGREGATE_BONDED:
             parse_aggregate_bonded_tx (raw_tx + disIndex + networkGenerationHashLength,
-                &ux_step_count, 
+                &ux_step_count,
                 txTypeName,
                 detailName,
                 extraInfo,
@@ -792,7 +792,7 @@ void display_tx(uint8_t *raw_tx, uint16_t dataLength,
         case HASH_LOCK:
             SPRINTF(txTypeName, "%s", "Hash Lock TX");
             parse_hash_lock_tx (raw_tx + disIndex + networkGenerationHashLength,
-                &ux_step_count, 
+                &ux_step_count,
                 detailName,
                 extraInfo,
                 fullAddress,
@@ -800,9 +800,9 @@ void display_tx(uint8_t *raw_tx, uint16_t dataLength,
             );
             break;
         default:
-            SPRINTF(txTypeName, "Tx type %x", txContent.txType); 
-            break; 
-    } 
+            SPRINTF(txTypeName, "Tx type %x", txContent.txType);
+            break;
+    }
 
 #if defined(TARGET_NANOS)
     ux_step = 0;
@@ -833,7 +833,7 @@ void handleSign(volatile unsigned int *flags, volatile unsigned int *tx) {
         raw_tx_len = 0;
     }
 
-    // move the contents of the buffer into raw_tx, and update raw_tx_ix to the end of the buffer, 
+    // move the contents of the buffer into raw_tx, and update raw_tx_ix to the end of the buffer,
     // to be ready for the next part of the tx.
     unsigned int len = get_apdu_buffer_length();
     unsigned char * in = G_io_apdu_buffer + OFFSET_CDATA;
@@ -857,7 +857,7 @@ void handleSign(volatile unsigned int *flags, volatile unsigned int *tx) {
         display_tx(&raw_tx, raw_tx_len, flags, tx);
     } else {
         // continue reading the tx
-        THROW(0x9000);  
+        THROW(0x9000);
     }
 }
 
@@ -915,8 +915,8 @@ void nem_main(void) {
 
                 // check the second byte (0x01) for the instruction.
 				switch (G_io_apdu_buffer[OFFSET_INS]) {
-                
-                case INS_GET_PUBLIC_KEY: 
+
+                case INS_GET_PUBLIC_KEY:
                 handleGetPublicKey(G_io_apdu_buffer[OFFSET_P1],
                                 G_io_apdu_buffer[OFFSET_P2],
                                 G_io_apdu_buffer + OFFSET_CDATA,
@@ -924,7 +924,7 @@ void nem_main(void) {
                 break;
 
                 //Sign a transaction
-                case INS_SIGN: 
+                case INS_SIGN:
                 handleSign(&flags, &tx);
                 break;
 
@@ -1057,7 +1057,7 @@ __attribute__((section(".boot"))) int main(void) {
 
     for (;;) {
 	    os_memset(&txContent, 0, sizeof(txContent));
-	
+
         UX_INIT();
         BEGIN_TRY {
             TRY {
