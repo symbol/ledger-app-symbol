@@ -531,9 +531,9 @@ void parse_address_alias_tx (unsigned char raw_tx[],
     typeOfAliasIndex = aliasedAddressIndex + 25;
     typeOfAlias = raw_tx[typeOfAliasIndex];
     if (typeOfAlias == 0x00) {
-        SPRINTF(extraInfo[1], "%s", "Link address");
-    } else if (typeOfAlias == 0x01) {
         SPRINTF(extraInfo[1], "%s", "Unlink address");
+    } else if (typeOfAlias == 0x01) {
+        SPRINTF(extraInfo[1], "%s", "Link address");
     }
 }
 
@@ -590,9 +590,9 @@ void parse_mosaic_alias_tx (unsigned char raw_tx[],
     typeOfAlias = raw_tx[typeOfAliasIndex];
     os_memset(extraInfo_0, 0, sizeof(extraInfo_0));
     if (typeOfAlias == 0x00) {
-        os_memmove((void *)extraInfo_0, "Link a mosaic to a namespace", 41);
-    }  else if (typeOfAlias == 0x01) {
         os_memmove((void *)extraInfo_0, "Unlink a mosaic from a namespace", 41);
+    }  else if (typeOfAlias == 0x01) {
+        os_memmove((void *)extraInfo_0, "Link a mosaic to a namespace", 41);
     }
 }
 
@@ -629,38 +629,40 @@ void parse_provision_namespace_tx (unsigned char raw_tx[],
 
     *ux_step_count = 4;
     //Type; 0: Root namespace, 1: Child namespace
-    registrationTypeIndex = 20+8+8;
+    registrationTypeIndex = isMultisig ? 2+2+8+8: 20+8+8;
     registrationType = raw_tx[registrationTypeIndex];
 
     if (registrationType == 1) {
         //Id, Parent namespace identifier is required for subnamespaces.
-        SPRINTF(detailName[2], "%s", "Parent ID");
+        SPRINTF(detailName[1], "%s", "Parent ID");
         namespaceIdIndex = isMultisig ? 2+2+8: 2+2+8+8+8;
         lowParentNamespaceId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex], 4));
         highParentNamespaceId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex+4], 4));
-        SPRINTF(extraInfo[1], "%x%x", highParentNamespaceId, lowParentNamespaceId);
+        SPRINTF(extraInfo[0], "%x%x", highParentNamespaceId, lowParentNamespaceId);
     } else {
         //Duration
-        SPRINTF(detailName[2], "%s", "Duration");
-        blockDurationIndex = isMultisig ? 2+28: 2+2+8+8;
+        SPRINTF(detailName[1], "%s", "Duration");
+        blockDurationIndex = isMultisig ? 2+2: 2+2+8+8;
         blockDuration = getUint64(reverseBytes(&raw_tx[blockDurationIndex], 8));
         day = blockDuration / 5760;
         hour = (blockDuration % 5760) / 240;
         min = (blockDuration % 240) / 4;
-        SPRINTF(extraInfo[1], "%d%s%d%s%d%s", day, "d ", hour, "h ", min, "m");
+        SPRINTF(extraInfo[0], "%d%s%d%s%d%s", day, "d ", hour, "h ", min, "m");
     }
 
     //Name
     SPRINTF(detailName[0], "%s", "Name");
-    nameSizeIndex = 2+2+8+8+8+8+1;
+    nameSizeIndex = isMultisig ? 2+2+8+8+1: 2+2+8+8+8+8+1;
     nameSize = raw_tx[nameSizeIndex];
     uint2Ascii(&raw_tx[nameSizeIndex+1], nameSize, extraInfo_0);
 
     //Fee
-    SPRINTF(detailName[1], "%s", "Fee");
-    feeIndex = 2+2;
-    fee = getUint64(reverseBytes(&raw_tx[feeIndex], 8));
-    print_amount(fee, 6, "xym", &extraInfo[0]);
+    if (!isMultisig) {
+        SPRINTF(detailName[2], "%s", "Fee");
+        feeIndex = 2+2;
+        fee = getUint64(reverseBytes(&raw_tx[feeIndex], 8));
+        print_amount(fee, 6, "xym", &extraInfo[1]);
+    }
 }
 
 void parse_aggregate_complete_tx (
@@ -736,6 +738,32 @@ void parse_aggregate_bonded_tx (
             SPRINTF(detailName[1], "%s", "Fee");
             print_amount(fee, 6, "xym", &extraInfo[0]);
             parse_transfer_tx (
+                raw_tx + txTypeIndex - 2,
+                ux_step_count,
+                detailName,
+                extraInfo,
+                extraInfo_0,
+                true);
+            break;
+        case MOSAIC_DEFINITION:
+            os_memmove((void *)txTypeName, "Create Mosaic", 14);
+            //Fee
+            SPRINTF(detailName[6], "%s", "Fee");
+            print_amount(fee, 6, "xym", &extraInfo[5]);
+            parse_mosaic_definition_tx (
+                raw_tx + txTypeIndex + 2,
+                ux_step_count,
+                detailName,
+                extraInfo,
+                extraInfo_0,
+                true);
+            break;
+        case REGISTER_NAMESPACE:
+            os_memmove((void *)txTypeName, "Register Namespace", 19);
+            //Fee
+            SPRINTF(detailName[2], "%s", "Fee");
+            print_amount(fee, 6, "xym", &extraInfo[1]);
+            parse_provision_namespace_tx (
                 raw_tx + txTypeIndex - 2,
                 ux_step_count,
                 detailName,

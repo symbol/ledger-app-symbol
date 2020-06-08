@@ -759,7 +759,7 @@ void display_tx(uint8_t *raw_tx, uint16_t dataLength,
             );
             break;
         case REGISTER_NAMESPACE:
-            SPRINTF(txTypeName, "%s", "Namespace registation");
+            SPRINTF(txTypeName, "%s", "Register Namespace");
             parse_provision_namespace_tx (raw_tx + disIndex + networkGenerationHashLength,
                 &ux_step_count,
                 detailName,
