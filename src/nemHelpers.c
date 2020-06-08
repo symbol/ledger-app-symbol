@@ -310,8 +310,8 @@ void parse_transfer_tx (unsigned char raw_tx[],
         amount = getUint64(reverseBytes(&raw_tx[offset], 8));
         offset +=8;
 
-        if ((highMosaicId == 0x519FC24B) && (lowMosaicId == 0x9223E0B4)) {
-            //xymbol.xym
+        if ((highMosaicId == 0x05D6A80D) && (lowMosaicId == 0xE3C9ADCA)) {
+            //symbol.xym
             SPRINTF(detailName[4+index], "XYM");
             print_amount(amount, 6, "xym", &extraInfo[3+index]); // mosaicDivisibility = 6
         } else {
