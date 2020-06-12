@@ -24,27 +24,6 @@
 
 static const uint8_t AMOUNT_MAX_SIZE = 17;
 
-uint8_t readNetworkIdFromBip32path(uint32_t bip32Path[]) {
-    uint8_t outNetworkId;
-    switch(bip32Path[2]) {
-        case 0x80000068:
-            outNetworkId = 104; //N: mainnet
-            break;
-        case 0x80000098:
-           outNetworkId = 152; //T
-           break;
-        case 0x80000060:
-            outNetworkId = 96; //M
-            break;
-        case 0x80000090:
-            outNetworkId = 144; //S
-            break;
-        default:
-            THROW(0x6a80);
-    }
-    return outNetworkId;
-}
-
 //todo nonprintable ch + utf8
 void uint2Ascii(uint8_t *inBytes, uint8_t len, char *out){
     char *tmpCh = (char *)inBytes;
@@ -127,6 +106,26 @@ uint64_t getUint64(uint8_t *data) {
     return ((uint64_t)data[7]) | ((uint64_t)data[6] << 8) | ((uint64_t)data[5] << 16) |
              ((uint64_t)data[4] << 24) | ((uint64_t)data[3] << 32) | ((uint64_t)data[2] << 40) |
              ((uint64_t)data[1] << 48) | ((uint64_t)data[0] << 56);
+}
+
+void to_xym_public_key(cx_ecfp_public_key_t *inPublicKey, uint8_t *outNemPublicKey) {
+    uint8_t i;
+    for (i=0; i<32; i++) {
+        outNemPublicKey[i] = inPublicKey->W[64 - i];
+    }
+
+    if ((inPublicKey->W[32] & 1) != 0) {
+        outNemPublicKey[31] |= 0x80;
+    }
+
+    cx_sha3_t hash1;
+    cx_sha3_t temphash;
+
+    cx_sha3_init(&hash1, 256);
+    cx_sha3_init(&temphash, 256);
+
+    unsigned char buffer1[32];
+    cx_hash(&hash1.header, CX_LAST, outNemPublicKey, 32, buffer1);
 }
 
 void to_nem_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, unsigned int inAlgo, uint8_t *outNemPublicKey, unsigned char *outNemAddress) {

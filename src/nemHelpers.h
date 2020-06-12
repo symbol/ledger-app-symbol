@@ -91,7 +91,6 @@ levyMosaicFullName:
 
 */
 
-uint8_t readNetworkIdFromBip32path(uint32_t bip32Path[]);
 uint8_t *reverseBytes(uint8_t *sourceArray, uint16_t len);
 void uint2Ascii(uint8_t *inBytes, uint8_t len, char *out);
 void print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out);
@@ -99,6 +98,7 @@ void print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out)
 uint16_t getUint16(uint8_t *buffer);
 uint32_t getUint32(uint8_t *data);
 uint64_t getUint64(uint8_t *data);
+void to_xym_public_key(cx_ecfp_public_key_t *inPublicKey, uint8_t *outNemPublicKey);
 void to_nem_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, unsigned int inAlgo, uint8_t *outNemPublicKey, unsigned char *outNemAddress);
 void public_key_to_address(uint8_t inNetworkId, uint8_t *outNemPublicKey, unsigned char *outNemAddress);
 
