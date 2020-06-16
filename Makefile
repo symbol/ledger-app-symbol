@@ -35,7 +35,7 @@ DEFINES   += APPVERSION=\"$(APPVERSION)\"
 ifeq ($(TARGET_NAME),TARGET_BLUE)
 ICONNAME=symbol.gif
 else
-ICONNAME=symbol.png
+ICONNAME=nanos_app_symbol.gif
 
 endif
 

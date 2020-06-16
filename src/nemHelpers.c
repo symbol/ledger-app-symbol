@@ -45,12 +45,13 @@ void print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out)
     char buffer[AMOUNT_MAX_SIZE];
     uint64_t dVal = amount;
     int i, j;
+    uint8_t MAX_DIVISIBILITY = (divisibility == 0) ? 0 : 6;
 
     // If the amount can't be represented safely in JavaScript, signal an error
     //if (MAX_SAFE_INTEGER < amount) THROW(0x6a80);
 
     memset(buffer, 0, AMOUNT_MAX_SIZE);
-    for (i = 0; dVal > 0 || i < 7; i++) {
+    for (i = 0; dVal > 0 || i < MAX_DIVISIBILITY + 1; i++) {
         if (dVal > 0) {
             buffer[i] = (dVal % 10) + '0';
             dVal /= 10;
@@ -74,10 +75,13 @@ void print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out)
         out[j] = buffer[i];
     }
     // strip trailing 0s
-    for (j -= 1; j > 0; j--) {
-        if (out[j] != '0') break;
+    if (MAX_DIVISIBILITY != 0)
+    {
+        for (j -= 1; j > 0; j--) {
+            if (out[j] != '0') break;
+        }
+        j += 1;
     }
-    j += 1;
 
     // strip trailing .
     if (out[j-1] == '.') j -= 1;
@@ -827,9 +831,9 @@ void parse_multisig_account_modification_tx (unsigned char raw_tx[],
     minRemovalDelta = raw_tx[minRemovalDeltaIndex];
     os_memset(extraInfo_0, 0, sizeof(extraInfo_0));
     if (minRemovalDelta > 0) {
-        print_amount(minRemovalDelta*10, 1, "address(es) added", extraInfo_0);
+        print_amount(minRemovalDelta, 0, "address(es) added", extraInfo_0);
     } else if (minRemovalDelta < 0) {
-        print_amount((~minRemovalDelta+1)*10, 1, "address(es) removed", extraInfo_0);
+        print_amount((~minRemovalDelta+1), 0, "address(es) removed", extraInfo_0);
     } else
     {
         os_memmove((void *)extraInfo_0, "Not change", 41);
