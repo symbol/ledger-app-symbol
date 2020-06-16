@@ -151,7 +151,7 @@ const ux_menu_entry_t menu_about[] = {
     UX_MENU_END};
 
 const ux_menu_entry_t menu_main[] = {
-    {NULL, NULL, 0, &C_icon_NEM, "Welcome to", "Symbol wallet", 33, 12},
+    {NULL, NULL, 0, &C_icon_symbol, "Welcome to", "Symbol wallet", 33, 12},
     {menu_about, NULL, 0, NULL, "About", NULL, 0, 0},
     {NULL, os_sched_exit, 0, &C_icon_dashboard, "Quit app", NULL, 50, 29},
     UX_MENU_END};
