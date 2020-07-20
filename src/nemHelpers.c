@@ -256,7 +256,7 @@ void parse_transfer_tx (unsigned char raw_tx[],
 
     //Recipient Address
     uint16_t recipientAddressIndex;
-    uint8_t tmpAddress[41];
+    uint8_t tmpAddress[40];
 
     //Message
     uint16_t msgSizeIndex;
@@ -283,10 +283,10 @@ void parse_transfer_tx (unsigned char raw_tx[],
     //Recipient Address
     SPRINTF(detailName[0], "%s", "Recipient");
     recipientAddressIndex = isMultisig ? 2+2 :2+2+8+8;
-    base32_encode(&raw_tx[recipientAddressIndex], 25, &tmpAddress, 40);
-    tmpAddress[40] = '\0';
+    base32_encode(&raw_tx[recipientAddressIndex], 24, &tmpAddress, 39);
+    tmpAddress[39] = '\0';
     os_memset(fullAddress, 0, sizeof(fullAddress));
-    os_memmove((void *)fullAddress, tmpAddress, 41);
+    os_memmove((void *)fullAddress, tmpAddress, 40);
 
     //Fee
     if (!isMultisig) {
@@ -297,11 +297,11 @@ void parse_transfer_tx (unsigned char raw_tx[],
 
     //Mosaic
     SPRINTF(detailName[3], "%s", "Mosaics");
-    numMosaicIndex = isMultisig ? 2+2+25: 2+2+8+8+25;
+    numMosaicIndex = isMultisig ? 2+2+24+2: 2+2+8+8+24+2;
     numMosaic = raw_tx[numMosaicIndex];
     SPRINTF(extraInfo[2], "Found %d txs", numMosaic);
 
-    offset  = isMultisig ? 2+2+25+1+2+4 : 2+2+8+8+25+1+2+4;
+    offset  = isMultisig ? 2+2+24+2+1+4+1 : 2+2+8+8+24+2+1+4+1;
 
     for (index = 0; index < numMosaic; index++) {
         *ux_step_count = *ux_step_count + 1;
@@ -313,23 +313,23 @@ void parse_transfer_tx (unsigned char raw_tx[],
         amount = getUint64(reverseBytes(&raw_tx[offset], 8));
         offset +=8;
 
-        if ((highMosaicId == 0x05D6A80D) && (lowMosaicId == 0xE3C9ADCA)) {
+        if ((highMosaicId == HIGH_XYM_MOSAIC_ID) && (lowMosaicId == LOW_XYM_MOSAIC_ID)) {
             //symbol.xym
             SPRINTF(detailName[4+index], "XYM");
             print_amount(amount, 6, "xym", &extraInfo[3+index]); // mosaicDivisibility = 6
         } else {
             //unkown mosaic
             SPRINTF(extraInfo[3+index], "%x%x", highMosaicId, lowMosaicId);
-            print_amount(amount*10, 1, ": MicroUnits", &detailName[4+index]); // mosaicDivisibility = 0
+            print_amount(amount, 0, ": MicroUnits", &detailName[4+index]); // mosaicDivisibility = 0
         }
     }
 
     //Message
     SPRINTF(detailName[2], "%s", "Message");
-    msgSizeIndex = isMultisig ? 2+2+25+1: 2+2+8+8+25+1;
+    msgSizeIndex = isMultisig ? 2+2+24: 2+2+8+8+24;
     msgSize = getUint16(reverseBytes(&raw_tx[msgSizeIndex], 2));
-    msgTypeIndex = isMultisig ? 2+2+25+1+2+4+numMosaic*16: 2+2+8+8+25+1+2+4+numMosaic*16;
-    msgIndex = msgTypeIndex + 1;
+    msgTypeIndex = isMultisig ? 2+2+24+2+1+4+numMosaic*16: 2+2+8+8+24+2+1+4+numMosaic*16;
+    msgIndex = msgTypeIndex+1+1;
     msgType = raw_tx[msgTypeIndex];
     if (msgSize <= 1) {
         SPRINTF(extraInfo[1], "%s\0", "<empty msg>");
@@ -496,7 +496,7 @@ void parse_address_alias_tx (unsigned char raw_tx[],
 
     //Aliased Address
     uint16_t aliasedAddressIndex;
-    uint8_t tmpAddress[41];
+    uint8_t tmpAddress[40];
 
     //Alias Type
     uint16_t typeOfAliasIndex;
@@ -524,14 +524,14 @@ void parse_address_alias_tx (unsigned char raw_tx[],
     //Aliased Address
     SPRINTF(detailName[0], "%s", "Aliased Addr.");
     aliasedAddressIndex = namespaceIdIndex + 8;
-    base32_encode(&raw_tx[aliasedAddressIndex], 25, &tmpAddress, 40);
-    tmpAddress[40] = '\0';
+    base32_encode(&raw_tx[aliasedAddressIndex], 24, &tmpAddress, 39);
+    tmpAddress[39] = '\0';
     os_memset(fullAddress, 0, sizeof(fullAddress));
-    os_memmove((void *)fullAddress, tmpAddress, 41);
+    os_memmove((void *)fullAddress, tmpAddress, 40);
 
     // Alias type
     SPRINTF(detailName[2], "%s", "Alias type");
-    typeOfAliasIndex = aliasedAddressIndex + 25;
+    typeOfAliasIndex = aliasedAddressIndex + 24;
     typeOfAlias = raw_tx[typeOfAliasIndex];
     if (typeOfAlias == 0x00) {
         SPRINTF(extraInfo[1], "%s", "Unlink address");
@@ -632,13 +632,13 @@ void parse_provision_namespace_tx (unsigned char raw_tx[],
 
     *ux_step_count = 4;
     //Type; 0: Root namespace, 1: Child namespace
-    registrationTypeIndex = isMultisig ? 2+2+8+8: 20+8+8;
+    registrationTypeIndex = isMultisig ? 2+2+8+8: 2+2+8+8+8+8;
     registrationType = raw_tx[registrationTypeIndex];
 
     if (registrationType == 1) {
         //Id, Parent namespace identifier is required for subnamespaces.
         SPRINTF(detailName[1], "%s", "Parent ID");
-        namespaceIdIndex = isMultisig ? 2+2+8: 2+2+8+8+8;
+        namespaceIdIndex = isMultisig ? 2+2: 2+2+8+8;
         lowParentNamespaceId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex], 4));
         highParentNamespaceId = getUint32(reverseBytes(&raw_tx[namespaceIdIndex+4], 4));
         SPRINTF(extraInfo[0], "%x%x", highParentNamespaceId, lowParentNamespaceId);
@@ -655,7 +655,7 @@ void parse_provision_namespace_tx (unsigned char raw_tx[],
 
     //Name
     SPRINTF(detailName[0], "%s", "Name");
-    nameSizeIndex = isMultisig ? 2+2+8+8+1: 2+2+8+8+8+8+1;
+    nameSizeIndex = registrationTypeIndex + 1;
     nameSize = raw_tx[nameSizeIndex];
     uint2Ascii(&raw_tx[nameSizeIndex+1], nameSize, extraInfo_0);
 
@@ -809,17 +809,17 @@ void parse_multisig_account_modification_tx (unsigned char raw_tx[],
     uint16_t minApprovalDeltaIndex;
     int8_t minApprovalDelta;
 
-    //public Key Additions Count
-    uint16_t numPublicKeyAdditionsIndex;
-    uint8_t numPublicKeyAdditions;
-    uint16_t publicKeyAdditionsIndex;
+    //address Additions Count
+    uint16_t numAddressAdditionsIndex;
+    uint8_t numAddressAdditions;
+    uint16_t addressAdditionsIndex;
 
-    //public Key Deletions Count
-    uint16_t numPublicKeyDeletionsIndex;
-    uint8_t numPublicKeyDeletions;
-    uint16_t publicKeyDeletionsIndex;
-    //cosignatory public key
-    char publicKey[65];
+    //address Deletions Count
+    uint16_t numAddressDeletionsIndex;
+    uint8_t numAddressDeletions;
+    uint16_t addressDeletionsIndex;
+    //cosignatory address
+    uint8_t cosignatoryAddress[39];
 
     //display
     uint8_t displayOffset;
@@ -852,40 +852,40 @@ void parse_multisig_account_modification_tx (unsigned char raw_tx[],
         SPRINTF(extraInfo[0], "Not change");
     }
 
-    //public Key Additions
-    numPublicKeyAdditionsIndex = minApprovalDeltaIndex+1;
-    numPublicKeyAdditions = raw_tx[numPublicKeyAdditionsIndex];
-    publicKeyAdditionsIndex = numPublicKeyAdditionsIndex+1+1+4;
+    //address Additions
+    numAddressAdditionsIndex = minApprovalDeltaIndex+1;
+    numAddressAdditions = raw_tx[numAddressAdditionsIndex];
+    addressAdditionsIndex = numAddressAdditionsIndex+1+1+4;
     displayOffset = 3;
-    for (uint8_t index = 0; index < numPublicKeyAdditions; index++) {
+    for (uint8_t index = 0; index < numAddressAdditions; index++) {
         *ux_step_count = *ux_step_count + 1;
         //Top line
-        SPRINTF(detailName[index + displayOffset], "%s (%d/%d)", "Add", index+1, numPublicKeyAdditions);
+        SPRINTF(detailName[index + displayOffset], "%s (%d/%d)", "Add", index+1, numAddressAdditions);
         //Bottom line
-        hex2String(&raw_tx[publicKeyAdditionsIndex], 32, publicKey);
-        publicKeyAdditionsIndex += 32;
+        base32_encode(&raw_tx[addressAdditionsIndex], 24, &cosignatoryAddress, 39);
+        addressAdditionsIndex += 24;
         os_memset(extraInfo[index + displayOffset -1], 0, sizeof(extraInfo[index + displayOffset -1]));
-        os_memmove((void *)extraInfo[index + displayOffset -1], publicKey, 5);
+        os_memmove((void *)extraInfo[index + displayOffset -1], cosignatoryAddress, 5);
         os_memmove((void *)(extraInfo[index + displayOffset -1] + 5), "..", 2);
-        os_memmove((void *)(extraInfo[index + displayOffset -1] + 5 + 2), publicKey + 64 - 4, 4);
+        os_memmove((void *)(extraInfo[index + displayOffset -1] + 5 + 2), cosignatoryAddress + 39 - 4, 4);
     }
 
-    //public Key Deletions Count
-    numPublicKeyDeletionsIndex = numPublicKeyAdditionsIndex+1;
-    numPublicKeyDeletions = raw_tx[numPublicKeyDeletionsIndex];
-    publicKeyDeletionsIndex = publicKeyAdditionsIndex;
-    displayOffset = 3 + numPublicKeyAdditions;
-    for (uint8_t index = 0; index < numPublicKeyDeletions; index++) {
+    //address Deletions
+    numAddressDeletionsIndex = numAddressAdditionsIndex+1;
+    numAddressDeletions = raw_tx[numAddressDeletionsIndex];
+    addressDeletionsIndex = addressAdditionsIndex;
+    displayOffset = 3 + numAddressAdditions;
+    for (uint8_t index = 0; index < numAddressDeletions; index++) {
         *ux_step_count = *ux_step_count + 1;
         //Top line
-        SPRINTF(detailName[index + displayOffset], "%s (%d/%d)", "Del", index+1, numPublicKeyDeletions);
+        SPRINTF(detailName[index + displayOffset], "%s (%d/%d)", "Del", index+1, numAddressDeletions);
         //Bottom line
-        hex2String(&raw_tx[publicKeyDeletionsIndex], 32, publicKey);
-        publicKeyDeletionsIndex += 32;
-        os_memset(extraInfo[index + displayOffset - 1], 0, sizeof(extraInfo[index + displayOffset -1]));
-        os_memmove((void *)extraInfo[index + displayOffset -1], publicKey, 5);
+        base32_encode(&raw_tx[addressAdditionsIndex], 24, &cosignatoryAddress, 39);
+        addressAdditionsIndex += 24;
+        os_memset(extraInfo[index + displayOffset -1], 0, sizeof(extraInfo[index + displayOffset -1]));
+        os_memmove((void *)extraInfo[index + displayOffset -1], cosignatoryAddress, 5);
         os_memmove((void *)(extraInfo[index + displayOffset -1] + 5), "..", 2);
-        os_memmove((void *)(extraInfo[index + displayOffset -1] + 5 + 2), publicKey + 64 - 4, 4);
+        os_memmove((void *)(extraInfo[index + displayOffset -1] + 5 + 2), cosignatoryAddress + 39 - 4, 4);
     }
 }
 
