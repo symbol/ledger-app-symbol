@@ -1,6 +1,7 @@
 /*******************************************************************************
- *   Ledger Nimiq App
+ *   XYM Wallet
  *   (c) 2018 Ledger
+ *   (c) 2020 FDS
  *
  *  adapted from https://stash.forgerock.org/projects/OPENAM/repos/forgerock-authenticator-ios/browse/ForgeRock-Authenticator/base32.h
  *
@@ -16,13 +17,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
-
 #ifndef _BASE32_H_
 #define _BASE32_H_
 
-#include <stddef.h>
 #include <stdint.h>
-
 
 int base32_encode(const uint8_t *data, int length, char *result, int bufSize);
 
