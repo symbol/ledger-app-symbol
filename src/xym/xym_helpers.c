@@ -88,7 +88,7 @@ void ripemd(uint8_t *in, uint8_t inlen, uint8_t *out) {
     cx_hash(&hash.header, CX_LAST, in, inlen, out);
 }
 
-void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, unsigned int inAlgo, uint8_t *outPublicKey, char *outAddress) {
+void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, unsigned int inAlgo, uint8_t *outPublicKey, char *outAddress, uint8_t outLen) {
     uint8_t buffer1[32];
     uint8_t buffer2[20];
     uint8_t rawAddress[32];
@@ -108,5 +108,5 @@ void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNet
     sha_calculation(inAlgo, rawAddress, 21, buffer1);
     //step3: add checksum
     os_memmove(rawAddress + 21, buffer1, 4);
-    base32_encode((const uint8_t *)rawAddress, 25, (char *) outAddress, 40);
+    base32_encode((const uint8_t *)rawAddress, 25, (char *) outAddress, outLen);
 }

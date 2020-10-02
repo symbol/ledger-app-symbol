@@ -165,10 +165,15 @@ void parse_transfer_txn_content(parseContext_t *context, bool isMultisig) {
         for (uint8_t i = 0; i < txn->mosaicsCount; i++) {
             add_new_field(context, XYM_MOSAICT_AMOUNT, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), read_data(context, sizeof(mosaic_t)));
         }
-        // Show Message Type
-        add_new_field(context, XYM_UINT8_TXN_MESSAGE_TYPE, STI_UINT8, sizeof(uint8_t), read_data(context, sizeof(uint8_t)));
-        // Show Message
-        add_new_field(context, XYM_STR_TXN_MESSAGE, STI_MESSAGE, txn->messageSize - 1, read_data(context, txn->messageSize - 1));
+        if (txn->messageSize == 0) {
+            // Show Empty Message
+            add_new_field(context, XYM_STR_TXN_MESSAGE, STI_MESSAGE, txn->messageSize, NULL);
+        } else {
+            // Show Message Type
+            add_new_field(context, XYM_UINT8_TXN_MESSAGE_TYPE, STI_UINT8, sizeof(uint8_t), read_data(context, sizeof(uint8_t)));
+            // Show Message
+            add_new_field(context, XYM_STR_TXN_MESSAGE, STI_MESSAGE, txn->messageSize - 1, read_data(context, txn->messageSize - 1));
+        }
         if (!isMultisig) {
             // Show fee
             add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee);
@@ -189,11 +194,11 @@ void parse_mosaic_definition_txn_content(parseContext_t *context, bool isMultisi
     add_new_field(context, XYM_UINT64_MOSAIC_ID, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->mosaicId);
     // Show duration
     add_new_field(context, XYM_UINT64_DURATION, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->duration);
-    // Show mosaic flag (Supply change)
-    add_new_field(context, XYM_UINT8_MD_SUPPLY_FLAG, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->flags);
     // Show mosaic flag (Transferable)
     add_new_field(context, XYM_UINT8_MD_TRANS_FLAG, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->flags);
-    // Show mosaic flag (Restriction)
+    // Show mosaic flag (Supply mutable)
+    add_new_field(context, XYM_UINT8_MD_SUPPLY_FLAG, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->flags);
+    // Show mosaic flag (Restrictable)
     add_new_field(context, XYM_UINT8_MD_RESTRICT_FLAG, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->flags);
 }
 
@@ -219,10 +224,6 @@ void parse_multisig_account_modification_txn_content(parseContext_t *context, bo
         fee = (txn_fee_t*) read_data(context, sizeof(txn_fee_t));
     }
     multisig_account_t *txn = (multisig_account_t*) read_data(context, MUTLISIG_ACCOUNT_HEADER_LENGTH);
-    // Show min removal delta
-    add_new_field(context, XYM_INT8_MAM_REMOVAL_DELTA, STI_INT8, sizeof(int8_t), (uint8_t*) &txn->minRemovalDelta);
-    // Show min approval delta
-    add_new_field(context, XYM_INT8_MAM_APPROVAL_DELTA, STI_INT8, sizeof(int8_t), (uint8_t*) &txn->minApprovalDelta);
     // Show address additions count
     add_new_field(context, XYM_UINT8_MAM_ADD_COUNT, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->addressAdditionsCount);
     // Show list of addition address
@@ -235,6 +236,10 @@ void parse_multisig_account_modification_txn_content(parseContext_t *context, bo
     for (uint8_t i = 0; i < txn->addressDeletionsCount; i++) {
         add_new_field(context, XYM_STR_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, read_data(context, XYM_ADDRESS_LENGTH));
     }
+    // Show min approval delta
+    add_new_field(context, XYM_INT8_MAM_APPROVAL_DELTA, STI_INT8, sizeof(int8_t), (uint8_t*) &txn->minApprovalDelta);
+    // Show min removal delta
+    add_new_field(context, XYM_INT8_MAM_REMOVAL_DELTA, STI_INT8, sizeof(int8_t), (uint8_t*) &txn->minRemovalDelta);
 }
 
 void parse_namespace_registration_txn_content(parseContext_t *context, bool isMultisig) {
@@ -247,11 +252,11 @@ void parse_namespace_registration_txn_content(parseContext_t *context, bool isMu
     if (has_data(context, txn->nameSize)) {
         // Show namespace reg type
         add_new_field(context, XYM_UINT8_NS_REG_TYPE, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->registrationType);
+        // Show namespace/sub-namespace name
+        add_new_field(context, XYM_STR_NAMESPACE, STI_STR, txn->nameSize, read_data(context, txn->nameSize));
         // Show Duration/ParentID
         add_new_field(context, txn->registrationType==0?XYM_UINT64_DURATION:XYM_UINT64_PARENTID, STI_UINT64,
             sizeof(uint64_t), (uint8_t*) &txn->duration);
-        // Show namespace/sub-namespace name
-        add_new_field(context, XYM_STR_NAMESPACE, STI_STR, txn->nameSize, read_data(context, txn->nameSize));
         if (!isMultisig) {
             // Show fee
             add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee);
@@ -363,13 +368,18 @@ void parse_inner_txn_content(parseContext_t *context, uint32_t len) {
 void parse_aggregate_txn_content(parseContext_t *context) {
     // get header first
     txn_fee_t *fee = (txn_fee_t*) read_data(context, sizeof(txn_fee_t));
-    aggregate_txn_t *txn = (aggregate_txn_t*) read_data(context, AGGREGATE_TXN_LENGTH);
-    // Show transaction hash
-    add_new_field(context, XYM_HASH256_AGG_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, (uint8_t*) &txn->transactionHash);
-    if (has_data(context, txn->payloadSize)) {
-        parse_inner_txn_content(context, txn->payloadSize);
+    if (transactionContext.rawTxLength == XYM_TRANSACTION_HASH_LENGTH) {
+        // Show transaction hash
+        add_new_field(context, XYM_HASH256_AGG_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, context->data);
     } else {
-        THROW(EXCEPTION_OVERFLOW);
+        aggregate_txn_t *txn = (aggregate_txn_t*) read_data(context, AGGREGATE_TXN_LENGTH);
+        // Show transaction hash
+        add_new_field(context, XYM_HASH256_AGG_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, (uint8_t*) &txn->transactionHash);
+        if (has_data(context, txn->payloadSize)) {
+            parse_inner_txn_content(context, txn->payloadSize);
+        } else {
+            THROW(EXCEPTION_OVERFLOW);
+        }
     }
     // Show max fee of aggregate tx
     add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee);
@@ -419,10 +429,10 @@ void parse_txn_detail(parseContext_t *context, common_header_t *txn) {
 
 void set_sign_data_length(parseContext_t *context) {
     if ((context->transactionType == XYM_TXN_AGGREGATE_COMPLETE) || (context->transactionType == XYM_TXN_AGGREGATE_BONDED)) {
-        const unsigned char TESTNET_GENERATION_HASH[] = {0x1D, 0xFB, 0x2F, 0xAA, 0x9E, 0x7F, 0x05, 0x41,
-                                                        0x68, 0xB0, 0xC5, 0xFC, 0xB8, 0x4F, 0x4D, 0xEB,
-                                                        0x62, 0xCC, 0x2B, 0x4D, 0x31, 0x7D, 0x86, 0x1F,
-                                                        0x31, 0x68, 0xD1, 0x61, 0xF5, 0x4E, 0xA7, 0x8B};
+        const unsigned char TESTNET_GENERATION_HASH[] = {0x6C, 0x1B, 0x92, 0x39, 0x1C, 0xCB, 0x41, 0xC9,
+                                                        0x64, 0x78, 0x47, 0x1C, 0x26, 0x34, 0xC1, 0x11,
+                                                        0xD9, 0xE9, 0x89, 0xDE, 0xCD, 0x66, 0x13, 0x0C,
+                                                        0x04, 0x30, 0xB5, 0xB8, 0xD2, 0x01, 0x17, 0xCD};
 
         if (os_memcmp(TESTNET_GENERATION_HASH, context->data, XYM_TRANSACTION_HASH_LENGTH) == 0) {
             // Sign data from generation hash to transaction hash
@@ -447,8 +457,8 @@ common_header_t *parse_txn_header(parseContext_t *context) {
 
 void parse_txn_internal(parseContext_t *context) {
     common_header_t* txn = parse_txn_header(context);
-    parse_txn_detail(context, txn);
     set_sign_data_length(context);
+    parse_txn_detail(context, txn);
 }
 
 void parse_txn_context(parseContext_t *context) {

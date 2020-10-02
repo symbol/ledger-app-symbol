@@ -40,9 +40,9 @@ void resolve_fieldname(field_t *field, char* dst) {
             CASE_FIELDNAME(XYM_UINT8_MSC_ACTION, "Change Direction")
             CASE_FIELDNAME(XYM_UINT8_NS_REG_TYPE, "Namespace Type")
             CASE_FIELDNAME(XYM_UINT8_AA_TYPE, "Alias Type")
-            CASE_FIELDNAME(XYM_UINT8_MD_SUPPLY_FLAG, "Supply Change")
             CASE_FIELDNAME(XYM_UINT8_MD_TRANS_FLAG, "Transferable")
-            CASE_FIELDNAME(XYM_UINT8_MD_RESTRICT_FLAG, "Restriction")
+            CASE_FIELDNAME(XYM_UINT8_MD_SUPPLY_FLAG, "Supply Mutable")
+            CASE_FIELDNAME(XYM_UINT8_MD_RESTRICT_FLAG, "Restrictable")
             CASE_FIELDNAME(XYM_UINT8_MAM_ADD_COUNT, "Address Add Num")
             CASE_FIELDNAME(XYM_UINT8_MAM_DEL_COUNT, "Address Del Num")
         }

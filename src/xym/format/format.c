@@ -123,9 +123,9 @@ void uint64_formatter(field_t* field, char *dst) {
         if (duration == 0) {
             SNPRINTF(dst, "%s", "Unlimited");
         } else {
-            uint8_t day = duration / 5760;
-            uint8_t hour = (duration % 5760) / 240;
-            uint8_t min = (duration % 240) / 4;
+            uint8_t day = duration / 2880;
+            uint8_t hour = (duration % 2880) / 120;
+            uint8_t min = (duration % 120) / 2;
             SNPRINTF(dst, "%d%s%d%s%d%s", day, "d ", hour, "h ", min, "m");
         }
     } else if (field->id == XYM_UINT64_MSC_AMOUNT) {

@@ -38,7 +38,7 @@
 #define XYM_TXN_MODIFY_ACCOUNT_PROPERTY_MOSAIC 0x4250
 #define XYM_TXN_MODIFY_ACCOUNT_PROPERTY_ENTITY_TYPE 0x4350
 
-#define XYM_MOSAIC_ID 0x5E62990DCAC5BE8A
+#define XYM_MOSAIC_ID 0x5B66E76BECAD0860
 #define AMOUNT_MAX_SIZE 17
 #define XYM_ADDRESS_LENGTH 24
 #define XYM_PRETTY_ADDRESS_LENGTH 39
@@ -47,6 +47,6 @@
 #define XYM_TRANSACTION_HASH_LENGTH 32
 
 void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out);
-void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, unsigned int inAlgo, uint8_t *outPublicKey, char *outAddress);
+void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, unsigned int inAlgo, uint8_t *outPublicKey, char *outAddress, uint8_t outLen);
 
 #endif //LEDGER_APP_XYM_XYMHELPERS_H

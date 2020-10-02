@@ -108,7 +108,8 @@ void handle_public_key(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
                                           networkId,
                                           algo,
                                           (uint8_t*) &xymPublicKey,
-                                          (char*) &address
+                                          (char*) &address,
+                                          XYM_PRETTY_ADDRESS_LENGTH + 1
                                           );
             io_seproxyhal_io_heartbeat();
             address[XYM_PRETTY_ADDRESS_LENGTH] = '\0';
