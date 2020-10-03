@@ -25,11 +25,12 @@ bipp32_path = (
     + "80000000"
     + "80000000"
     + "80000000")
+test_net_network_type = "98"
 
 dongle = getDongle(True)
 
 # Get public key
-publicKey = dongle.exchange(bytes(bytearray.fromhex("E00201801505" + bipp32_path)))
+publicKey = dongle.exchange(bytes(bytearray.fromhex("E00201801605" + bipp32_path + test_net_network_type)))
 print("publicKey respond       [" + str(len(publicKey)) + "] " + publicKey.hex().upper())
 
 

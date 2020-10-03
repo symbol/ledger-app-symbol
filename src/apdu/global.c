@@ -18,11 +18,11 @@
 #include "global.h"
 #include "messages/sign_transaction.h"
 
-transactionContext_t transactionContext;
-signState_e signState;
+transaction_context_t transactionContext;
+sign_state_e signState;
 
 void reset_transaction_context() {
-    explicit_bzero(&parseContext, sizeof(parseContext_t));
-    explicit_bzero(&transactionContext, sizeof(transactionContext));
+    explicit_bzero(&parseContext, sizeof(parse_context_t));
+    explicit_bzero(&transactionContext, sizeof(transaction_context_t));
     signState = IDLE;
 }

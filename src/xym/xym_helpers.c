@@ -72,23 +72,19 @@ void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *
     }
 }
 
-void sha_calculation(uint8_t algorithm, uint8_t *in, uint8_t inlen, uint8_t *out) {
+void sha_calculation(uint8_t *in, uint8_t inlen, uint8_t *out, uint8_t outlen) {
     cx_sha3_t hash;
-    if (algorithm == CX_KECCAK) {
-        cx_keccak_init(&hash, 256);
-    } else {
-        cx_sha3_init(&hash, 256);
-    }
-    cx_hash(&hash.header, CX_LAST, in, inlen, out);
+    cx_sha3_init(&hash, 256);
+    cx_hash(&hash.header, CX_LAST, in, inlen, out, outlen);
 }
 
-void ripemd(uint8_t *in, uint8_t inlen, uint8_t *out) {
+void ripemd(uint8_t *in, uint8_t inlen, uint8_t *out, uint8_t outlen) {
     cx_ripemd160_t hash;
     cx_ripemd160_init(&hash);
-    cx_hash(&hash.header, CX_LAST, in, inlen, out);
+    cx_hash(&hash.header, CX_LAST, in, inlen, out, outlen);
 }
 
-void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, unsigned int inAlgo, uint8_t *outPublicKey, char *outAddress, uint8_t outLen) {
+void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, uint8_t *outPublicKey, char *outAddress, uint8_t outLen) {
     uint8_t buffer1[32];
     uint8_t buffer2[20];
     uint8_t rawAddress[32];
@@ -99,14 +95,15 @@ void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNet
     if ((inPublicKey->W[32] & 1) != 0) {
         outPublicKey[31] |= 0x80;
     }
-    sha_calculation(inAlgo, outPublicKey, 32, buffer1);
-    ripemd(buffer1, 32, buffer2);
+    sha_calculation(outPublicKey, 32, buffer1, sizeof(buffer1));
+    ripemd(buffer1, 32, buffer2, sizeof(buffer2));
     //step1: add network prefix char
-    rawAddress[0] = inNetworkId;   //152:,,,,,
+    rawAddress[0] = inNetworkId;
     //step2: add ripemd160 hash
     os_memmove(rawAddress + 1, buffer2, sizeof(buffer2));
-    sha_calculation(inAlgo, rawAddress, 21, buffer1);
+    sha_calculation(rawAddress, 21, buffer1, sizeof(buffer1));
     //step3: add checksum
-    os_memmove(rawAddress + 21, buffer1, 4);
-    base32_encode((const uint8_t *)rawAddress, 25, (char *) outAddress, outLen);
+    os_memmove(rawAddress + 21, buffer1, 3);
+    rawAddress[24] = 0;
+    base32_encode((const uint8_t *)rawAddress, 24, (char *) outAddress, outLen);
 }

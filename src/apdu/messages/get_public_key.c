@@ -54,20 +54,21 @@ void on_address_rejected() {
 void handle_public_key(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
                         uint16_t dataLength, volatile unsigned int *flags,
                         volatile unsigned int *tx) {
-    UNUSED(dataLength);
     uint8_t privateKeyData[XYM_PRIVATE_KEY_LENGTH];
     uint32_t bip32Path[MAX_BIP32_PATH];
     uint32_t i;
     uint8_t bip32PathLength = *(dataBuffer++);
     cx_ecfp_private_key_t privateKey;
     cx_ecfp_public_key_t publicKey;
-    uint8_t networkId = 0x98;
     uint8_t algo;
     cx_curve_t curve;
     char address[XYM_PRETTY_ADDRESS_LENGTH+1];
     uint8_t p2Chain = p2 & 0x3F;
     UNUSED(p2Chain);
 
+    if (dataLength != XYM_PKG_GETPUBLICKEY_LENGTH) {
+        THROW(0x6a80);
+    }
     if ((bip32PathLength < 0x01) || (bip32PathLength > MAX_BIP32_PATH)) {
         THROW(0x6a80);
     }
@@ -88,10 +89,15 @@ void handle_public_key(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
                        (dataBuffer[2] << 8) | (dataBuffer[3]);
         dataBuffer += 4;
     }
+    uint8_t network_type = *dataBuffer;
+
     io_seproxyhal_io_heartbeat();
 
     BEGIN_TRY {
         TRY {
+            // Changed hashing algorithm to cope with catapult-server changes. All Key derivation and signing are now using SHA512.
+            // Removed SignSchema so NetworkType is no longer bonded to the schema anymore (sha3 / keccak).
+            // This change will affect all existing keypairs / address (derived from public key) and transaction signatures.
             algo = CX_SHA512;
             os_perso_derive_node_bip32(CX_CURVE_256K1, bip32Path, bip32PathLength, privateKeyData, NULL);
             cx_ecfp_init_private_key(curve, privateKeyData, XYM_PRIVATE_KEY_LENGTH, &privateKey);
@@ -105,8 +111,7 @@ void handle_public_key(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
             explicit_bzero(privateKeyData, sizeof(privateKeyData));
             io_seproxyhal_io_heartbeat();
             xym_public_key_and_address(&publicKey,
-                                          networkId,
-                                          algo,
+                                          network_type,
                                           (uint8_t*) &xymPublicKey,
                                           (char*) &address,
                                           XYM_PRETTY_ADDRESS_LENGTH + 1

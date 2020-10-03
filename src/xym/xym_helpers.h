@@ -45,8 +45,9 @@
 #define XYM_PUBLIC_KEY_LENGTH 32
 #define XYM_PRIVATE_KEY_LENGTH 32
 #define XYM_TRANSACTION_HASH_LENGTH 32
+#define XYM_PKG_GETPUBLICKEY_LENGTH 22
 
 void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out);
-void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, unsigned int inAlgo, uint8_t *outPublicKey, char *outAddress, uint8_t outLen);
+void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, uint8_t *outPublicKey, char *outAddress, uint8_t outLen);
 
 #endif //LEDGER_APP_XYM_XYMHELPERS_H

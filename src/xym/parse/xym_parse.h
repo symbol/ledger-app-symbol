@@ -41,8 +41,8 @@ typedef struct {
     result_t result;
     uint32_t length;
     uint32_t offset;
-} parseContext_t;
+} parse_context_t;
 
-void parse_txn_context(parseContext_t *parseContext);
+void parse_txn_context(parse_context_t *parseContext);
 
 #endif //LEDGER_APP_XYM_XYMPARSE_H

@@ -24,7 +24,7 @@
 
 #define PREFIX_LENGTH   4
 
-parseContext_t parseContext;
+parse_context_t parseContext;
 
 void handle_packet_content(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
                          uint8_t dataLength, volatile unsigned int *flags);
@@ -57,7 +57,7 @@ void sign_transaction() {
             io_seproxyhal_io_heartbeat();
             tx = (uint32_t) cx_eddsa_sign(&privateKey, CX_LAST, CX_SHA512, transactionContext.rawTx,
                                               transactionContext.rawTxLength, NULL, 0, G_io_apdu_buffer,
-                                              NULL);
+                                              IO_APDU_BUFFER_SIZE, NULL);
 
         }
         CATCH_OTHER(e) {
