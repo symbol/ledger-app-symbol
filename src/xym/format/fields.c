@@ -40,6 +40,7 @@ void resolve_fieldname(field_t *field, char* dst) {
             CASE_FIELDNAME(XYM_UINT8_MSC_ACTION, "Change Direction")
             CASE_FIELDNAME(XYM_UINT8_NS_REG_TYPE, "Namespace Type")
             CASE_FIELDNAME(XYM_UINT8_AA_TYPE, "Alias Type")
+            CASE_FIELDNAME(XYM_UINT8_MD_DIV, "Divisibility")
             CASE_FIELDNAME(XYM_UINT8_MD_TRANS_FLAG, "Transferable")
             CASE_FIELDNAME(XYM_UINT8_MD_SUPPLY_FLAG, "Supply Mutable")
             CASE_FIELDNAME(XYM_UINT8_MD_RESTRICT_FLAG, "Restrictable")
@@ -51,6 +52,8 @@ void resolve_fieldname(field_t *field, char* dst) {
     if (field->dataType == STI_UINT64) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_UINT64_DURATION, "Duration")
+            CASE_FIELDNAME(XYM_UINT64_ROOT_RENTAIL_FEE, "Est. Rental Fee")
+            CASE_FIELDNAME(XYM_UINT64_SUB_RENTAIL_FEE, "Est. Rental Fee")
             CASE_FIELDNAME(XYM_UINT64_PARENTID, "Parent ID")
             CASE_FIELDNAME(XYM_UINT64_MSC_AMOUNT, "Change Amount")
             CASE_FIELDNAME(XYM_UINT64_NS_ID, "Namespace ID")

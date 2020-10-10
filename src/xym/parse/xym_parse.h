@@ -20,6 +20,7 @@
 #include "limitations.h"
 #include "xym/format/fields.h"
 
+#pragma pack(push, 1)
 typedef struct {
     uint64_t mosaicId;
     uint64_t amount;
@@ -29,6 +30,8 @@ typedef struct {
     uint64_t maxFee;
     uint64_t deadline;
 } txn_fee_t;
+
+#pragma pack(pop)
 
 typedef struct {
     uint8_t numFields;

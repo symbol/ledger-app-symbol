@@ -1,6 +1,6 @@
 /*******************************************************************************
 *   XYM Wallet
-*   (c) 2020 Towo Labs
+*   (c) 2020 FDS
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.

@@ -1,7 +1,7 @@
 /*******************************************************************************
 *   XYM Wallet
 *   (c) 2017 Ledger
-*    (c) 2020 FDS
+*   (c) 2020 FDS
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -62,7 +62,11 @@ void sprintf_ascii(char *dst, uint16_t maxLen, uint8_t *src, uint16_t dataLength
     }
     char *tmpCh = (char *) src;
     for (uint8_t j=0; j < dataLength; j++){
-        dst[j] = tmpCh[j];
+        if (tmpCh[j] < 32 || tmpCh[j] > 126) {
+            dst[j] = '?';
+        } else {
+            dst[j] = tmpCh[j];
+        }
     }
     dst[dataLength] = '\0';
 }

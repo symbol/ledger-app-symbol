@@ -123,13 +123,17 @@ void uint64_formatter(field_t* field, char *dst) {
         if (duration == 0) {
             SNPRINTF(dst, "%s", "Unlimited");
         } else {
-            uint8_t day = duration / 2880;
+            uint16_t day = duration / 2880;
             uint8_t hour = (duration % 2880) / 120;
             uint8_t min = (duration % 120) / 2;
             SNPRINTF(dst, "%d%s%d%s%d%s", day, "d ", hour, "h ", min, "m");
         }
     } else if (field->id == XYM_UINT64_MSC_AMOUNT) {
         xym_print_amount(read_uint64(field->data), 0, "", dst);
+    } else if (field->id == XYM_UINT64_ROOT_RENTAIL_FEE) {
+        xym_print_amount(read_uint64(field->data), 3, "XYM", dst);
+    } else if (field->id == XYM_UINT64_SUB_RENTAIL_FEE) {
+        SNPRINTF(dst, "%s", "0.1 XYM");
     } else {
         sprintf_hex(dst, MAX_FIELD_LEN, field->data, field->length, 1);
     }
