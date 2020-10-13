@@ -55,20 +55,47 @@ void sprintf_hex(char *dst, uint16_t maxLen, uint8_t *src, uint16_t dataLength, 
     dst[2*dataLength] = '\0';
 }
 
-//todo nonprintable ch + utf8
-void sprintf_ascii(char *dst, uint16_t maxLen, uint8_t *src, uint16_t dataLength) {
-    if (dataLength > maxLen - 1) {
+void snprintf_ascii_ex(char *dst, uint16_t pos, uint16_t maxLen, uint8_t *src, uint16_t dataLength) {
+    if (dataLength + pos > maxLen - 1) {
         THROW(EXCEPTION_OVERFLOW);
     }
     char *tmpCh = (char *) src;
+    uint16_t k = 0, l = 0;
     for (uint8_t j=0; j < dataLength; j++){
         if (tmpCh[j] < 32 || tmpCh[j] > 126) {
-            dst[j] = '?';
+            k++;
+            if (k==1) {
+                dst[pos + l] = '?';
+                l++;
+            } else if (k==2) {
+                k = 0;
+            }
         } else {
-            dst[j] = tmpCh[j];
+            k = 0;
+            dst[pos + l] = tmpCh[j];
+            l++;
         }
     }
-    dst[dataLength] = '\0';
+    dst[pos + l] = '\0';
+}
+
+void sprintf_ascii(char *dst, uint16_t maxLen, uint8_t *src, uint16_t dataLength) {
+    snprintf_ascii_ex(dst, 0, maxLen, src, dataLength);
+}
+
+void snprintf_ascii(char *dst, uint16_t pos, uint16_t maxLen, uint8_t *src, uint16_t dataLength) {
+    if (dataLength + pos > maxLen - 1) {
+        THROW(EXCEPTION_OVERFLOW);
+    }
+    char *tmpCh = (char *) src;
+    for (uint16_t j=0; j < dataLength; j++) {
+        if (tmpCh[j] < 32 || tmpCh[j] > 126) {
+            dst[pos+j] = '?';
+        } else {
+            dst[pos+j] = tmpCh[j];
+        }
+    }
+    dst[dataLength + pos] = '\0';
 }
 
 void sprintf_mosaic(char *dst, uint16_t maxLen, mosaic_t *mosaic, char *asset) {

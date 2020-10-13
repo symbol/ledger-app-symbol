@@ -52,8 +52,6 @@ void resolve_fieldname(field_t *field, char* dst) {
     if (field->dataType == STI_UINT64) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_UINT64_DURATION, "Duration")
-            CASE_FIELDNAME(XYM_UINT64_ROOT_RENTAIL_FEE, "Est. Rental Fee")
-            CASE_FIELDNAME(XYM_UINT64_SUB_RENTAIL_FEE, "Est. Rental Fee")
             CASE_FIELDNAME(XYM_UINT64_PARENTID, "Parent ID")
             CASE_FIELDNAME(XYM_UINT64_MSC_AMOUNT, "Change Amount")
             CASE_FIELDNAME(XYM_UINT64_NS_ID, "Namespace ID")

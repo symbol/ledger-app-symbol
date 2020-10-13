@@ -251,9 +251,6 @@ void parse_namespace_registration_txn_content(parse_context_t *context, bool isM
         // Show Duration/ParentID
         add_new_field(context, txn->registrationType==0?XYM_UINT64_DURATION:XYM_UINT64_PARENTID, STI_UINT64,
             sizeof(uint64_t), (uint8_t*) &txn->duration);
-        // Show rental fee
-        add_new_field(context, txn->registrationType==0?XYM_UINT64_ROOT_RENTAIL_FEE:XYM_UINT64_SUB_RENTAIL_FEE, STI_UINT64,
-            sizeof(uint64_t), (uint8_t*) &txn->duration);
         if (!isMultisig) {
             // Show fee
             add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee);

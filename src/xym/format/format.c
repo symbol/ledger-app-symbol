@@ -130,10 +130,6 @@ void uint64_formatter(field_t* field, char *dst) {
         }
     } else if (field->id == XYM_UINT64_MSC_AMOUNT) {
         xym_print_amount(read_uint64(field->data), 0, "", dst);
-    } else if (field->id == XYM_UINT64_ROOT_RENTAIL_FEE) {
-        xym_print_amount(read_uint64(field->data), 3, "XYM", dst);
-    } else if (field->id == XYM_UINT64_SUB_RENTAIL_FEE) {
-        SNPRINTF(dst, "%s", "0.1 XYM");
     } else {
         sprintf_hex(dst, MAX_FIELD_LEN, field->data, field->length, 1);
     }

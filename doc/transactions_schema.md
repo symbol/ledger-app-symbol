@@ -1,6 +1,6 @@
 # Symbol's APDU package fields
 
-### I. Shared parts (Phan chung cua cac goi tin)
+### I. Shared parts
 ```
 01. CLA   (1 byte)
 02. INS   (1 byte)
@@ -18,9 +18,9 @@
 12. Max Fee      (MOSAIC)          (8 bytes)  (depends on tx) (https://docs.symbolplatform.com/concepts/fees.html#fees)
 13. Deadline      (MOSAIC)         (8 bytes)  (depends on tx) (Number of milliseconds elapsed since the creation of the nemesis block)
 ```
-#### NOTE: Fields with (MOSAIC) tag (field 12, 13) are NOT USED if in the multisig transactions
+#### NOTE: Fields with (MOSAIC) tag (field 12, 13) are NOT USED in the aggregate transactions
 
-### II. Properties parts (Phan rieng cua cac goi tin)
+### II. Properties parts
 
 # A. Normal tx
 
@@ -44,7 +44,6 @@ Example:
 Full raw transaction (ledger receive):
 ```
 E004008090058000002C800010F78000000080000000800000001DFB2FAA9E7F054168B0C5FCB84F4DEB62CC2B4D317D861F3168D161F54EA78B0198544180841E0000000000F6A98B390600000098F2A5E8E063AD1A9085EF5B5167E2F1A5645C48FA2C024917000100000000008ABEC5CA0D99625E40A5AE0200000000005468697320697320612074657374206D657373616765
-E00400809005
 ```
 #### Parsed above tx
 ```
