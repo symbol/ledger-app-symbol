@@ -101,7 +101,7 @@ typedef struct {
 #pragma pack(pop)
 
 bool has_data(parse_context_t *context, uint32_t numBytes) {
-    if (numBytes > context->length) {
+    if (context->offset + numBytes < context->offset) {
         return false;
     }
 
