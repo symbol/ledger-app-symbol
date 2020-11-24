@@ -229,6 +229,44 @@ delta       40420F0000000000
 action      01
 ```
 
+
+##  Hash Lock Schemas schema
+6. Hash Lock Schemas (Reference: https://docs.symbolplatform.com/serialization/lock_hash.html#hashlocktransaction)
+
+### Hash Lock Schemas
+```
+Property                                Types                                       Description
+----------------------------------------------------------------------------------------------------------------------
+mosaic 	                                UnresolvedMosaic 	array(uint64,uint64)    Locked mosaic.
+duration 	                            BlockDuration 	(uint64)                    Number of blocks for which a lock should be valid.
+hash 	                                Hash256 (32 bytes)                          AggregateBondedTransaction hash that has to be confirmed before unlocking the mosaics.
+```
+
+Example:
+
+Full raw transaction (ledger receive):
+```
+E004008081058000002C800010F78000000080000000000000001DFB2FAA9E7F054168B0C5FCB84F4DEB62CC2B4D317D861F3168D161F54EA78B0198484180841E0000000000D58B993906000000A84582052890A9518096980000000000E0010000000000002B51EBCBC3E40EFE8AF68A0408F5A72474B1327A64E3E3B47D9B139230C7833B
+```
+#### Parsed above tx
+```
+##### Shared parts
+
+01 -> 06    E00400808105
+07          8000002C800010F78000000080000000000000000
+08          1DFB2FAA9E7F054168B0C5FCB84F4DEB62CC2B4D317D861F3168D161F54EA78B
+09 -> 10    0198
+11          4841
+12          80841E0000000000
+13          D58B993906000000
+
+##### Properties parts
+mosaicId    A84582052890A951
+amount      8096980000000000
+duration    E001000000000000
+hash        2B51EBCBC3E40EFE8AF68A0408F5A72474B1327A64E3E3B47D9B139230C7833B
+```
+
 # B. Aggregate tx
 . Apply for aggregate bonded and aggregate complete tx
 ### Outer transaction
@@ -380,39 +418,56 @@ addressAdditions2     984B730EA3B726CC12A9FAF78B4D37354FF8722DBB950137
 ```
 
 
-##  Hash Lock Schemas schema
-3. Hash Lock Schemas (Reference: https://docs.symbolplatform.com/serialization/lock_hash.html#hashlocktransaction)
+##  Account Metadata Transaction schema
+3. Namespace Metadata Transaction (Reference: https://docs.symbolplatform.com/serialization/metadata.html#accountmetadatatransaction)
 
-### Hash Lock Schemas
+
 ```
 Property                                Types                                       Description
 ----------------------------------------------------------------------------------------------------------------------
-mosaic 	                                UnresolvedMosaic 	array(uint64,uint64)    Locked mosaic.
-duration 	                            BlockDuration 	(uint64)                    Number of blocks for which a lock should be valid.
-hash 	                                Hash256 (32 bytes)                          AggregateBondedTransaction hash that has to be confirmed before unlocking the mosaics.
+targetAddress                         	UnresolvedAddress (24 bytes)                Metadata target address.
+scopedMetadataKey	                      uint64	                                    Metadata key scoped to source, target and type.
+valueSizeDelta		                      int16	                                      Change in value size in bytes.
+valueSize		                            uint16	                                  	Value size in bytes.
+value	                                  array(byte, valueSize)	                    Difference between the previous value and new value. You can calculate value as xor(previous-value, new-value).
+
+
+(Optional): One package just has field duration or parentId at a time. Depends on registrationType
 ```
 
 Example:
 
 Full raw transaction (ledger receive):
 ```
-E004008081058000002C800010F78000000080000000000000001DFB2FAA9E7F054168B0C5FCB84F4DEB62CC2B4D317D861F3168D161F54EA78B0198484180841E0000000000D58B993906000000A84582052890A9518096980000000000E0010000000000002B51EBCBC3E40EFE8AF68A0408F5A72474B1327A64E3E3B47D9B139230C7833B
+E0040080F1058000002C800010F78000000080000000800000006C1B92391CCB41C96478471C2634C111D9E989DECD66130C0430B5B8D20117CD019841414084040000000000CFEA4287070000005F221AD2C6D297E683692CE332B24157057E6FB43A832F18C13495EC49544E0880000000000000007F0000000000000017140D44583C4BAD44C0A9DB963E315E1C425A7495271738B8F81938DDE75C40000000000198444198F2A5E8E063AD1A9085EF5B5167E2F1A5645C48FA2C02497AEAFC0DA38583AB2B002B0074686973206973207468652076616C7565206669656C64206F66206163636F756E74206D6574616461746100
+
 ```
 #### Parsed above tx
 ```
 ##### Shared parts
-
-01 -> 06    E00400808105
-07          8000002C800010F78000000080000000000000000
-08          1DFB2FAA9E7F054168B0C5FCB84F4DEB62CC2B4D317D861F3168D161F54EA78B
+01 -> 06    E0040080F105
+07          8000002C800010F7800000008000000080000000
+08          6C1B92391CCB41C96478471C2634C111D9E989DECD66130C0430B5B8D20117CD
 09 -> 10    0198
-11          4841
-12          80841E0000000000
-13          D58B993906000000
+11          4141
+12          4084040000000000
+13          CFEA428707000000
 
 ##### Properties parts
-mosaicId    A84582052890A951
-amount      8096980000000000
-duration    E001000000000000
-hash        2B51EBCBC3E40EFE8AF68A0408F5A72474B1327A64E3E3B47D9B139230C7833B
+TX Hash               5F221AD2C6D297E683692CE332B24157057E6FB43A832F18C13495EC49544E08
+Size (all inner tx)   80000000
+Reserve (outer tx)    00000000
+
+Size (inner tx 1)     7F000000
+Reserve               00000000
+Signer Public Key     17140D44583C4BAD44C0A9DB963E315E1C425A7495271738B8F81938DDE75C40
+EntityReserve1        00000000
+09 ->10 (inner tx1)   0198
+11(inner tx1)         4441
+targetAddress         98F2A5E8E063AD1A9085EF5B5167E2F1A5645C48FA2C0249
+scopedMetadataKey     7AEAFC0DA38583AB
+valueSizeDelta        2B00
+valueSize             2B00
+value                 74686973206973207468652076616C7565206669656C64206F66206163636F756E74206D65746164617461
+Filling zeroes        00
 ```

@@ -132,3 +132,7 @@ uint32_t read_uint32(uint8_t *src) {
 int8_t read_int8(uint8_t *src) {
     return (int8_t) *((uint8_t*) src);
 }
+
+int8_t read_int16(uint8_t *src) {
+    return (int16_t) *((uint8_t*) src);
+}

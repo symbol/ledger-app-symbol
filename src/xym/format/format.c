@@ -90,11 +90,25 @@ void uint8_formatter(field_t* field, char *dst) {
     }
 }
 
+void int16_formatter(field_t* field, char *dst) {
+    int16_t value = read_int16(field->data);
+    if (value > 0) {
+        SNPRINTF(dst, "%s %d %s", "Increase", value, "byte(s)");
+    } else if (value < 0) {
+        SNPRINTF(dst, "%s %d %s", "Descrease", ~value + 1, "byte(s)");
+    } else {
+        SNPRINTF(dst, "%s", "Not change");
+    }
+}
+
 void uint16_formatter(field_t* field, char *dst) {
     uint16_t value = read_uint16(field->data);
     switch (value) {
         CASE_FIELDVALUE(XYM_TXN_TRANSFER, "Transfer")
         CASE_FIELDVALUE(XYM_TXN_REGISTER_NAMESPACE, "Register Namespace")
+        CASE_FIELDVALUE(XYM_TXN_ACCOUNT_METADATA, "Account Metadata")
+        CASE_FIELDVALUE(XYM_TXN_MOSAIC_METADATA, "Mosaic Metadata")
+        CASE_FIELDVALUE(XYM_TXN_NAMESPACE_METADATA, "Namespace Metadata")
         CASE_FIELDVALUE(XYM_TXN_ADDRESS_ALIAS, "Address Alias")
         CASE_FIELDVALUE(XYM_TXN_MOSAIC_ALIAS, "Mosaic Alias")
         CASE_FIELDVALUE(XYM_TXN_MOSAIC_DEFINITION, "Mosaic definition")
@@ -143,7 +157,7 @@ void address_formatter(field_t* field, char *dst) {
 void mosaic_formatter(field_t* field, char *dst) {
     if (field->dataType == STI_MOSAIC_CURRENCY) {
         mosaic_t* value = (mosaic_t *)field->data;
-        if (value->mosaicId == XYM_MOSAIC_ID || field->id == XYM_MOSAICT_HL_QUANTITY) {
+        if (value->mosaicId == XYM_MOSAIC_ID || field->id == XYM_MOSAIC_HL_QUANTITY) {
             xym_print_amount(value->amount, 6, "XYM", dst);
         } else {
             sprintf_mosaic(dst, MAX_FIELD_LEN, value, "micro");
@@ -181,6 +195,8 @@ field_formatter_t get_formatter(field_t* field) {
             return int8_formatter;
         case STI_UINT8:
             return uint8_formatter;
+        case STI_INT16:
+            return int16_formatter;
         case STI_UINT16:
             return uint16_formatter;
         case STI_UINT32:

@@ -66,6 +66,27 @@ typedef struct {
 } ns_header_t;
 
 typedef struct {
+    uint8_t address[XYM_ADDRESS_LENGTH];
+    uint64_t metadataKey;
+} metadata_header_1_t;
+
+typedef struct {
+    int16_t valueSizeDelta;
+    uint16_t valueSize;
+} metadata_header_2_t;
+
+typedef struct {
+    metadata_header_1_t address_data;
+    metadata_header_2_t value_data;
+} am_header_t;
+
+typedef struct {
+    metadata_header_1_t address_data;
+    uint64_t mosaicNamespaceId;
+    metadata_header_2_t value_data;
+} mnm_header_t;
+
+typedef struct {
     uint64_t namespaceId;
     uint8_t address[XYM_ADDRESS_LENGTH];
     uint8_t aliasAction;
@@ -133,6 +154,7 @@ uint8_t* read_data(parse_context_t *context, uint32_t numBytes) {
     if (has_data(context, numBytes)) {
         uint32_t offset = context->offset;
         context->offset += numBytes;
+        // PRINTF("******* Read: %d bytes - Move offset: %d->%d/%d\n", numBytes, offset, context->offset, context->length);
         return context->data + offset;
     } else {
         THROW(EXCEPTION_OVERFLOW);
@@ -159,7 +181,7 @@ void parse_transfer_txn_content(parse_context_t *context, bool isMultisig) {
         add_new_field(context, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->mosaicsCount);
         // Show mosaics amount
         for (uint8_t i = 0; i < txn->mosaicsCount; i++) {
-            add_new_field(context, XYM_MOSAICT_AMOUNT, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), read_data(context, sizeof(mosaic_t))); // Read data and security check
+            add_new_field(context, XYM_MOSAIC_AMOUNT, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), read_data(context, sizeof(mosaic_t))); // Read data and security check
         }
         if (txn->messageSize == 0) {
             // Show Empty Message
@@ -264,6 +286,50 @@ void parse_namespace_registration_txn_content(parse_context_t *context, bool isM
     }
 }
 
+void parse_account_metadata_txn_content(parse_context_t *context, bool isMultisig) {
+    // get header first
+    txn_fee_t *fee = NULL;
+    if (!isMultisig) {
+        fee = (txn_fee_t*) read_data(context, sizeof(txn_fee_t)); // Read data and security check
+    }
+    am_header_t *txn = (am_header_t*) read_data(context, sizeof(am_header_t)); // Read data and security check
+    // Show metadata target address
+    add_new_field(context, XYM_STR_METADATA_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (uint8_t*) &txn->address_data.address);
+    // Show scope metadata key
+    add_new_field(context, XYM_UINT64_METADATA_KEY, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->address_data.metadataKey);
+    // Show different value
+    add_new_field(context, XYM_STR_METADATA_VALUE, STI_MESSAGE, txn->value_data.valueSize, read_data(context, txn->value_data.valueSize)); // Read data and security check
+    // Show value size delta
+    add_new_field(context, XYM_INT16_VALUE_DELTA, STI_INT16, sizeof(uint16_t), (uint8_t*) &txn->value_data.valueSizeDelta);
+    if (!isMultisig) {
+        // Show fee
+        add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee);
+    }
+}
+
+void parse_mosaic_namespace_metadata_txn_content(parse_context_t *context, bool isMultisig, bool isMosaicMetadata) {
+    // get header first
+    txn_fee_t *fee = NULL;
+    if (!isMultisig) {
+        fee = (txn_fee_t*) read_data(context, sizeof(txn_fee_t)); // Read data and security check
+    }
+    mnm_header_t *txn = (mnm_header_t*) read_data(context, sizeof(mnm_header_t)); // Read data and security check
+    // Show metadata target address
+    add_new_field(context, XYM_STR_METADATA_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (uint8_t*) &txn->address_data.address);
+    // Show target mosaic/namespace id
+    add_new_field(context, isMosaicMetadata ? XYM_UINT64_MOSAIC_ID : XYM_UINT64_NS_ID, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->mosaicNamespaceId);
+    // Show scope metadata key
+    add_new_field(context, XYM_UINT64_METADATA_KEY, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->address_data.metadataKey);
+    // Show different value
+    add_new_field(context, XYM_STR_METADATA_VALUE, STI_MESSAGE, txn->value_data.valueSize, read_data(context, txn->value_data.valueSize)); // Read data and security check
+    // Show value size delta
+    add_new_field(context, XYM_INT16_VALUE_DELTA, STI_INT16, sizeof(uint16_t), (uint8_t*) &txn->value_data.valueSizeDelta);
+    if (!isMultisig) {
+        // Show fee
+        add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee);
+    }
+}
+
 void parse_address_alias_txn_content(parse_context_t *context, bool isMultisig) {
     // get header first
     txn_fee_t *fee = NULL;
@@ -310,7 +376,7 @@ void parse_hash_lock_txn_content(parse_context_t *context, bool isMultisig) {
     }
     hl_header_t *txn = (hl_header_t*) read_data(context, sizeof(hl_header_t)); // Read data and security check
     // Show lock quantity
-    add_new_field(context, XYM_MOSAICT_HL_QUANTITY, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (uint8_t*) &txn->mosaic);
+    add_new_field(context, XYM_MOSAIC_HL_QUANTITY, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (uint8_t*) &txn->mosaic);
     // Show duration
     add_new_field(context, XYM_UINT64_DURATION, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->blockDuration);
     // Show transaction hash
@@ -325,8 +391,9 @@ void parse_inner_txn_content(parse_context_t *context, uint32_t len) {
     uint32_t totalSize = 0;
     do {
         // get header first
+        uint32_t prevOffset = context->offset;
         inner_tx_header_t *txn = (inner_tx_header_t*) read_data(context, sizeof(inner_tx_header_t)); // Read data and security check
-        totalSize += txn->size + 2;
+        totalSize += txn->size;
         // Show Transaction type
         add_new_field(context, XYM_UINT16_INNER_TRANSACTION_TYPE, STI_UINT16, sizeof(uint16_t), (uint8_t*) &txn->innerTxType);
         switch (txn->innerTxType) {
@@ -335,12 +402,22 @@ void parse_inner_txn_content(parse_context_t *context, uint32_t len) {
                 break;
             case XYM_TXN_MOSAIC_DEFINITION:
                 parse_mosaic_definition_txn_content(context, true);
+                move_pos(context, 2);  // Filling zeros
                 break;
             case XYM_TXN_MOSAIC_SUPPLY_CHANGE:
                 parse_mosaic_supply_change_txn_content(context, true);
                 break;
             case XYM_TXN_REGISTER_NAMESPACE:
                 parse_namespace_registration_txn_content(context, true);
+                break;
+            case XYM_TXN_ACCOUNT_METADATA:
+                parse_account_metadata_txn_content(context, true);
+                break;
+            case XYM_TXN_MOSAIC_METADATA:
+                parse_mosaic_namespace_metadata_txn_content(context, true, true);
+                break;
+            case XYM_TXN_NAMESPACE_METADATA:
+                parse_mosaic_namespace_metadata_txn_content(context, true, false);
                 break;
             case XYM_TXN_ADDRESS_ALIAS:
                 parse_address_alias_txn_content(context, true);
@@ -357,10 +434,13 @@ void parse_inner_txn_content(parse_context_t *context, uint32_t len) {
             default:
                 break;
         }
-        if (totalSize < len-5) {
-            move_pos(context, 2); //Move position and security check
+        uint32_t processedDataLength = context->offset - prevOffset;
+        if (txn->size > processedDataLength) {
+            move_pos(context, txn->size - processedDataLength); //Move position and security check
+        } else {
+            totalSize = totalSize + (processedDataLength - txn->size);
         }
-    } while (totalSize < len-5);
+    } while (totalSize < len - sizeof(inner_tx_header_t));
 }
 
 void parse_aggregate_txn_content(parse_context_t *context) {
@@ -399,6 +479,9 @@ void parse_txn_detail(parse_context_t *context, common_header_t *txn) {
             break;
         case XYM_TXN_REGISTER_NAMESPACE:
             parse_namespace_registration_txn_content(context, false);
+            break;
+        case XYM_TXN_ACCOUNT_METADATA:
+            parse_account_metadata_txn_content(context, false);
             break;
         case XYM_TXN_ADDRESS_ALIAS:
             parse_address_alias_txn_content(context, false);

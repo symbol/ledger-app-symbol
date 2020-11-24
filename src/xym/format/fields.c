@@ -26,13 +26,6 @@ void resolve_fieldname(field_t *field, char* dst) {
         }
     }
 
-    if (field->dataType == STI_UINT16) {
-        switch (field->id) {
-            CASE_FIELDNAME(XYM_UINT16_TRANSACTION_TYPE, "Transaction Type")
-            CASE_FIELDNAME(XYM_UINT16_INNER_TRANSACTION_TYPE, "Inner TX Type")
-        }
-    }
-
     if (field->dataType == STI_UINT8) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_UINT8_TXN_MESSAGE_TYPE, "Message Type")
@@ -49,6 +42,19 @@ void resolve_fieldname(field_t *field, char* dst) {
         }
     }
 
+    if (field->dataType == STI_INT16) {
+        switch (field->id) {
+            CASE_FIELDNAME(XYM_INT16_VALUE_DELTA, "Value Size Delta")
+        }
+    }
+
+    if (field->dataType == STI_UINT16) {
+        switch (field->id) {
+            CASE_FIELDNAME(XYM_UINT16_TRANSACTION_TYPE, "Transaction Type")
+            CASE_FIELDNAME(XYM_UINT16_INNER_TRANSACTION_TYPE, "Inner TX Type")
+        }
+    }
+
     if (field->dataType == STI_UINT64) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_UINT64_DURATION, "Duration")
@@ -56,6 +62,7 @@ void resolve_fieldname(field_t *field, char* dst) {
             CASE_FIELDNAME(XYM_UINT64_MSC_AMOUNT, "Change Amount")
             CASE_FIELDNAME(XYM_UINT64_NS_ID, "Namespace ID")
             CASE_FIELDNAME(XYM_UINT64_MOSAIC_ID, "Mosaic ID")
+            CASE_FIELDNAME(XYM_UINT64_METADATA_KEY, "Metadata Key")
         }
     }
 
@@ -69,14 +76,15 @@ void resolve_fieldname(field_t *field, char* dst) {
     if (field->dataType == STI_ADDRESS) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_STR_RECIPIENT_ADDRESS, "Recipient")
+            CASE_FIELDNAME(XYM_STR_METADATA_ADDRESS, "Target Address")
             CASE_FIELDNAME(XYM_STR_ADDRESS, "Address")
         }
     }
 
     if (field->dataType == STI_MOSAIC_CURRENCY) {
         switch (field->id) {
-            CASE_FIELDNAME(XYM_MOSAICT_AMOUNT, "Amount")
-            CASE_FIELDNAME(XYM_MOSAICT_HL_QUANTITY, "Lock Quantity")
+            CASE_FIELDNAME(XYM_MOSAIC_AMOUNT, "Amount")
+            CASE_FIELDNAME(XYM_MOSAIC_HL_QUANTITY, "Lock Quantity")
         }
     }
 
@@ -89,6 +97,7 @@ void resolve_fieldname(field_t *field, char* dst) {
     if (field->dataType == STI_MESSAGE) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_STR_TXN_MESSAGE, "Message")
+            CASE_FIELDNAME(XYM_STR_METADATA_VALUE, "Value")
         }
     }
 
