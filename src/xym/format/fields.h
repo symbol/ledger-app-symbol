@@ -78,6 +78,7 @@
 
 #define XYM_MOSAIC_HL_QUANTITY 0xD0
 #define XYM_MOSAIC_AMOUNT 0xD1
+#define XYM_UNKNOWN_MOSAIC 0xD2
 
 typedef struct {
     uint8_t id;

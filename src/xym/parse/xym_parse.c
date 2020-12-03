@@ -181,7 +181,12 @@ void parse_transfer_txn_content(parse_context_t *context, bool isMultisig) {
         add_new_field(context, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->mosaicsCount);
         // Show mosaics amount
         for (uint8_t i = 0; i < txn->mosaicsCount; i++) {
-            add_new_field(context, XYM_MOSAIC_AMOUNT, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), read_data(context, sizeof(mosaic_t))); // Read data and security check
+            mosaic_t *mosaic = (mosaic_t*) read_data(context, sizeof(mosaic_t));
+            if (mosaic->mosaicId != XYM_MOSAIC_ID) {
+                // Unknow mosaic notification
+                add_new_field(context, XYM_UNKNOWN_MOSAIC, STI_STR, 0, (uint8_t*) NULL);
+            }
+            add_new_field(context, XYM_MOSAIC_AMOUNT, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (uint8_t*) mosaic); // Read data and security check
         }
         if (txn->messageSize == 0) {
             // Show Empty Message

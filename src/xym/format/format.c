@@ -182,7 +182,9 @@ void msg_formatter(field_t* field, char *dst) {
 }
 
 void string_formatter(field_t* field, char *dst) {
-    if (field->length > MAX_FIELD_LEN) {
+    if (field->id == XYM_UNKNOWN_MOSAIC) {
+        SNPRINTF(dst, "%s", "Divisibility and levy cannot be shown");
+    } else if (field->length > MAX_FIELD_LEN) {
         sprintf_ascii(dst, MAX_FIELD_LEN, field->data, MAX_FIELD_LEN - 1);
     } else {
         sprintf_ascii(dst, MAX_FIELD_LEN, field->data, field->length);

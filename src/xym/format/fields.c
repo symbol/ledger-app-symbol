@@ -103,6 +103,7 @@ void resolve_fieldname(field_t *field, char* dst) {
 
     if (field->dataType == STI_STR) {
         switch (field->id) {
+            CASE_FIELDNAME(XYM_UNKNOWN_MOSAIC, "Unknown Mosaic")
             CASE_FIELDNAME(XYM_STR_NAMESPACE, "Name")
         }
     }
