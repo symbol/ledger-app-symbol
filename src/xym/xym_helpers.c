@@ -100,10 +100,10 @@ void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNet
     //step1: add network prefix char
     rawAddress[0] = inNetworkId;
     //step2: add ripemd160 hash
-    os_memmove(rawAddress + 1, buffer2, sizeof(buffer2));
+    memcpy(rawAddress + 1, buffer2, sizeof(buffer2));
     sha_calculation(rawAddress, 21, buffer1, sizeof(buffer1));
     //step3: add checksum
-    os_memmove(rawAddress + 21, buffer1, 3);
+    memcpy(rawAddress + 21, buffer1, 3);
     rawAddress[24] = 0;
     base32_encode((const uint8_t *)rawAddress, 24, (char *) outAddress, outLen);
 }

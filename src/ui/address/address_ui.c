@@ -50,7 +50,7 @@ UX_STEP_VALID(
         pb,
         approval_action(),
         {
-            &C_icon_validate,
+            &C_icon_validate_14,
             "Approve",
         });
 

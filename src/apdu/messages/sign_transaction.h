@@ -26,4 +26,7 @@ extern parse_context_t parseContext;
 void handle_sign(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
                 uint8_t dataLength, volatile unsigned int *flags);
 
+void handle_packet_content(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
+                         uint8_t dataLength, volatile unsigned int *flags);
+
 #endif //LEDGER_APP_XYM_SIGNTRANSACTION_H

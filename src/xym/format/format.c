@@ -24,9 +24,9 @@
 #include "common.h"
 #include "base32.h"
 
-typedef void (*field_formatter_t)(field_t* field, char* dst);
+typedef void (*field_formatter_t)(const field_t *field, char *dst);
 
-void int8_formatter(field_t* field, char *dst) {
+static void int8_formatter(const field_t *field, char *dst) {
     int8_t value = read_int8(field->data);
     if (value > 0) {
         SNPRINTF(dst, "%s %d %s", "Add", value, "address(es)");
@@ -37,7 +37,18 @@ void int8_formatter(field_t* field, char *dst) {
     }
 }
 
-void uint8_formatter(field_t* field, char *dst) {
+static void int16_formatter(const field_t *field, char *dst) {
+    int16_t value = read_int16(field->data);
+    if (value > 0) {
+        SNPRINTF(dst, "%s %d %s", "Increase", value, "byte(s)");
+    } else if (value < 0) {
+        SNPRINTF(dst, "%s %d %s", "Descrease", ~value + 1, "byte(s)");
+    } else {
+        SNPRINTF(dst, "%s", "Not change");
+    }
+}
+
+static void uint8_formatter(const field_t *field, char *dst) {
     uint8_t value = read_uint8(field->data);
     if (field->id == XYM_UINT8_MOSAIC_COUNT) {
         SNPRINTF(dst, "Found %d txs", value);
@@ -90,18 +101,7 @@ void uint8_formatter(field_t* field, char *dst) {
     }
 }
 
-void int16_formatter(field_t* field, char *dst) {
-    int16_t value = read_int16(field->data);
-    if (value > 0) {
-        SNPRINTF(dst, "%s %d %s", "Increase", value, "byte(s)");
-    } else if (value < 0) {
-        SNPRINTF(dst, "%s %d %s", "Descrease", ~value + 1, "byte(s)");
-    } else {
-        SNPRINTF(dst, "%s", "Not change");
-    }
-}
-
-void uint16_formatter(field_t* field, char *dst) {
+static void uint16_formatter(const field_t *field, char *dst) {
     uint16_t value = read_uint16(field->data);
     switch (value) {
         CASE_FIELDVALUE(XYM_TXN_TRANSFER, "Transfer")
@@ -122,16 +122,11 @@ void uint16_formatter(field_t* field, char *dst) {
     }
 }
 
-void uint32_formatter(field_t* field, char *dst) {
-    uint32_t value = read_uint32(field->data);
-    SNPRINTF(dst, "%x", value);
+static void hash_formatter(const field_t *field, char *dst) {
+    snprintf_hex(dst, MAX_FIELD_LEN, field->data, field->length, 0);
 }
 
-void hash_formatter(field_t* field, char *dst) {
-    sprintf_hex(dst, MAX_FIELD_LEN, field->data, field->length, 0);
-}
-
-void uint64_formatter(field_t* field, char *dst) {
+static void uint64_formatter(const field_t *field, char *dst) {
     if (field->id == XYM_UINT64_DURATION) {
         uint64_t duration = read_uint64(field->data);
         if (duration == 0) {
@@ -145,53 +140,53 @@ void uint64_formatter(field_t* field, char *dst) {
     } else if (field->id == XYM_UINT64_MSC_AMOUNT) {
         xym_print_amount(read_uint64(field->data), 0, "", dst);
     } else {
-        sprintf_hex(dst, MAX_FIELD_LEN, field->data, field->length, 1);
+        snprintf_hex(dst, MAX_FIELD_LEN, field->data, field->length, 1);
     }
 }
 
-void address_formatter(field_t* field, char *dst) {
+static void address_formatter(const field_t *field, char *dst) {
     base32_encode(field->data, XYM_ADDRESS_LENGTH, dst, XYM_PRETTY_ADDRESS_LENGTH);
     dst[39] = '\0';
 }
 
-void mosaic_formatter(field_t* field, char *dst) {
+static void mosaic_formatter(const field_t *field, char *dst) {
     if (field->dataType == STI_MOSAIC_CURRENCY) {
         mosaic_t* value = (mosaic_t *)field->data;
-        if (value->mosaicId == XYM_MOSAIC_ID || field->id == XYM_MOSAIC_HL_QUANTITY) {
+        if (value->mosaicId == XYM_TESTNET_MOSAIC_ID || field->id == XYM_MOSAIC_HL_QUANTITY) {
             xym_print_amount(value->amount, 6, "XYM", dst);
         } else {
-            sprintf_mosaic(dst, MAX_FIELD_LEN, value, "micro");
+            snprintf_mosaic(dst, MAX_FIELD_LEN, value, "micro");
         }
     }
 }
 
-void xym_formatter(field_t* field, char *dst) {
+static void xym_formatter(const field_t *field, char *dst) {
     if (field->dataType == STI_XYM) {
         xym_print_amount(read_uint64(field->data), 6, "XYM", dst);
     }
 }
 
-void msg_formatter(field_t* field, char *dst) {
+static void msg_formatter(const field_t *field, char *dst) {
     if (field->length == 0) {
         SNPRINTF(dst, "%s", "<empty msg>");
     } else if (field->length >= MAX_FIELD_LEN) {
-        sprintf_ascii(dst, MAX_FIELD_LEN, &field->data[0], MAX_FIELD_LEN - 1);
+        snprintf_ascii(dst, MAX_FIELD_LEN, &field->data[0], MAX_FIELD_LEN - 1);
     } else {
-        sprintf_ascii(dst, MAX_FIELD_LEN, &field->data[0], field->length);
+        snprintf_ascii(dst, MAX_FIELD_LEN, &field->data[0], field->length);
     }
 }
 
-void string_formatter(field_t* field, char *dst) {
+static void string_formatter(const field_t *field, char *dst) {
     if (field->id == XYM_UNKNOWN_MOSAIC) {
         SNPRINTF(dst, "%s", "Divisibility and levy cannot be shown");
     } else if (field->length > MAX_FIELD_LEN) {
-        sprintf_ascii(dst, MAX_FIELD_LEN, field->data, MAX_FIELD_LEN - 1);
+        snprintf_ascii(dst, MAX_FIELD_LEN, field->data, MAX_FIELD_LEN - 1);
     } else {
-        sprintf_ascii(dst, MAX_FIELD_LEN, field->data, field->length);
+        snprintf_ascii(dst, MAX_FIELD_LEN, field->data, field->length);
     }
 }
 
-field_formatter_t get_formatter(field_t* field) {
+static field_formatter_t get_formatter(const field_t *field) {
     switch (field->dataType) {
         case STI_INT8:
             return int8_formatter;
@@ -201,15 +196,12 @@ field_formatter_t get_formatter(field_t* field) {
             return int16_formatter;
         case STI_UINT16:
             return uint16_formatter;
-        case STI_UINT32:
-            return uint32_formatter;
         case STI_UINT64:
             return uint64_formatter;
         case STI_HASH256:
             return hash_formatter;
         case STI_ADDRESS:
             return address_formatter;
-        case STI_MOSAIC_COUNT:
         case STI_MOSAIC_CURRENCY:
             return mosaic_formatter;
         case STI_XYM:
@@ -223,7 +215,7 @@ field_formatter_t get_formatter(field_t* field) {
     }
 }
 
-void format_field(field_t* field, char* dst) {
+void format_field(const field_t *field, char *dst) {
     memset(dst, 0, MAX_FIELD_LEN);
 
     field_formatter_t formatter = get_formatter(field);

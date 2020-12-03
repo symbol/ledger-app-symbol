@@ -15,19 +15,10 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-#include <os_io_seproxyhal.h>
 #include <string.h>
 #include "readers.h"
 
-char int_to_number_char(uint64_t value) {
-    if (value > 9) {
-        return '?';
-    }
-
-    return (char) ('0' + value);
-}
-
-void sprintf_number(char *dst, uint16_t len, uint64_t value) {
+int snprintf_number(char *dst, uint16_t len, uint64_t value) {
     char *p = dst;
 
     // First, compute the address of the last digit to be written.
@@ -38,101 +29,87 @@ void sprintf_number(char *dst, uint16_t len, uint64_t value) {
     } while (shifter);
 
     if (p > dst + len - 1) {
-        THROW(EXCEPTION_OVERFLOW);
+        return E_NOT_ENOUGH_DATA;
     }
+    int n = p - dst;
 
     // Now write string representation, right to left.
     *p-- = 0;
     do {
-        *p-- = int_to_number_char(value % 10);
+        *p-- = '0' + (value % 10);
         value /= 10;
     } while (value);
+    return n;
 }
 
-void sprintf_hex(char *dst, uint16_t maxLen, uint8_t *src, uint16_t dataLength, uint8_t reverse) {
-    if (2 * dataLength > maxLen - 1) {
-        THROW(EXCEPTION_OVERFLOW);
+int snprintf_hex(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength, uint8_t reverse) {
+    if (2 * dataLength > maxLen - 1 || maxLen < 1 || dataLength < 1) {
+        return E_NOT_ENOUGH_DATA;
     }
     for (uint16_t i = 0; i < dataLength; i++) {
-        SPRINTF(dst + 2 * i, "%02X", reverse==1?src[dataLength-1-i]:src[i]);
+        snprintf(dst + 2 * i, maxLen - 2 * i, "%02X", reverse==1?src[dataLength-1-i]:src[i]);
     }
     dst[2*dataLength] = '\0';
+    return 2*dataLength;
 }
 
-void snprintf_ascii_ex(char *dst, uint16_t pos, uint16_t maxLen, uint8_t *src, uint16_t dataLength) {
-    if (dataLength + pos > maxLen - 1) {
-        THROW(EXCEPTION_OVERFLOW);
+int snprintf_ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength) {
+    if (dataLength > maxLen - 1 || maxLen < 1 || dataLength < 1) {
+        return E_NOT_ENOUGH_DATA;
     }
     char *tmpCh = (char *) src;
     uint16_t k = 0, l = 0;
-    for (uint8_t j=0; j < dataLength; j++){
+    for (uint16_t j=0; j < dataLength; j++){
         if (tmpCh[j] < 32 || tmpCh[j] > 126) {
             k++;
             if (k==1) {
-                dst[pos + l] = '?';
+                dst[l] = '?';
                 l++;
             } else if (k==2) {
                 k = 0;
             }
         } else {
             k = 0;
-            dst[pos + l] = tmpCh[j];
+            dst[l] = tmpCh[j];
             l++;
         }
     }
-    dst[pos + l] = '\0';
+    dst[l] = '\0';
+    return l;
 }
 
-void sprintf_ascii(char *dst, uint16_t maxLen, uint8_t *src, uint16_t dataLength) {
-    snprintf_ascii_ex(dst, 0, maxLen, src, dataLength);
-}
-
-void snprintf_ascii(char *dst, uint16_t pos, uint16_t maxLen, uint8_t *src, uint16_t dataLength) {
-    if (dataLength + pos > maxLen - 1) {
-        THROW(EXCEPTION_OVERFLOW);
-    }
-    char *tmpCh = (char *) src;
-    for (uint16_t j=0; j < dataLength; j++) {
-        if (tmpCh[j] < 32 || tmpCh[j] > 126) {
-            dst[pos+j] = '?';
-        } else {
-            dst[pos+j] = tmpCh[j];
-        }
-    }
-    dst[dataLength + pos] = '\0';
-}
-
-void sprintf_mosaic(char *dst, uint16_t maxLen, mosaic_t *mosaic, char *asset) {
-    sprintf_number(dst, maxLen, mosaic->amount);
+int snprintf_mosaic(char *dst, uint16_t maxLen, mosaic_t *mosaic, char *asset) {
+    if(snprintf_number(dst, maxLen, mosaic->amount) < 1) {
+        return E_NOT_ENOUGH_DATA;
+    };
     strcat(dst, " ");
     strcat(dst, asset);
     strcat(dst, " 0x");
     uint16_t len = strlen(dst);
     uint8_t* mosaicId = (uint8_t*) &mosaic->mosaicId;
     char* mosaicHex = dst + len;
-    sprintf_hex(mosaicHex, maxLen - len, mosaicId, sizeof(uint64_t), 1);
+    if(snprintf_hex(mosaicHex, maxLen - len, mosaicId, sizeof(uint64_t), 1) < 1) {
+        return E_NOT_ENOUGH_DATA;
+    };
+    return strlen(dst);
 }
 
-uint64_t read_uint64(uint8_t *src) {
-    return (uint64_t) *((uint32_t *)src);
-}
-
-uint8_t read_uint8(uint8_t *src) {
-    return (uint8_t) *((uint8_t *)src);
-}
-
-uint16_t read_uint16(uint8_t *src) {
-    return (uint16_t) *((uint16_t *)src);
-}
-
-uint32_t read_uint32(uint8_t *src) {
-    return (uint32_t) *((uint32_t *)src);
-}
-
-int8_t read_int8(uint8_t *src) {
+int8_t read_int8(const uint8_t *src) {
     return (int8_t) *((uint8_t*) src);
 }
 
-int8_t read_int16(uint8_t *src) {
+int16_t read_int16(const uint8_t *src) {
     return (int16_t) *((uint8_t*) src);
+}
+
+uint8_t read_uint8(const uint8_t *src) {
+    return (uint8_t) *((uint8_t *)src);
+}
+
+uint16_t read_uint16(const uint8_t *src) {
+    return (uint16_t) *((uint16_t *)src);
+}
+
+uint64_t read_uint64(const uint8_t *src) {
+    return (uint64_t) *((uint32_t *)src);
 }

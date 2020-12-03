@@ -26,9 +26,6 @@
 
 parse_context_t parseContext;
 
-void handle_packet_content(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
-                         uint8_t dataLength, volatile unsigned int *flags);
-
 void sign_transaction() {
     uint8_t privateKeyData[64];
     cx_ecfp_private_key_t privateKey;
@@ -164,7 +161,7 @@ void handle_packet_content(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
     }
 
     // Append received data to stored transaction data
-    os_memmove(parseContext.data + parseContext.length, workBuffer, dataLength);
+    memcpy(parseContext.data + parseContext.length, workBuffer, dataLength);
     parseContext.length += dataLength;
 
     if (hasMore(p1)) {
@@ -177,8 +174,12 @@ void handle_packet_content(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
 
         transactionContext.rawTxLength = parseContext.length;
 
-        // Try to parse the transaction. If the parsing fails an exception is thrown,
-        // causing the processing to abort and the transaction context to be reset.
+        // Try to parse the transaction. If the parsing fails, throw an exception
+        // to cause the processing to abort and the transaction context to be reset.
+        // if (parse_txn_context(&parseContext)) {
+        //     // Mask real cause behind generic error (INCORRECT_DATA)
+        //     THROW(0x6a80);
+        // }
         parse_txn_context(&parseContext);
 
         review_transaction(&parseContext.result, sign_transaction, reject_transaction);

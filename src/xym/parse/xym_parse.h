@@ -19,6 +19,7 @@
 
 #include "limitations.h"
 #include "xym/format/fields.h"
+#include "xym/xym_helpers.h"
 
 #pragma pack(push, 1)
 typedef struct {
@@ -46,6 +47,6 @@ typedef struct {
     uint32_t offset;
 } parse_context_t;
 
-void parse_txn_context(parse_context_t *parseContext);
+int parse_txn_context(parse_context_t *parseContext);
 
 #endif //LEDGER_APP_XYM_XYMPARSE_H

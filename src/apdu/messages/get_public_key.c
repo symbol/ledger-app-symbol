@@ -27,7 +27,7 @@ uint32_t set_result_get_publicKey() {
     uint32_t tx = 0;
     //publicKey
     G_io_apdu_buffer[tx++] = XYM_PUBLIC_KEY_LENGTH;
-    os_memmove(G_io_apdu_buffer + tx, xymPublicKey, XYM_PUBLIC_KEY_LENGTH);
+    memcpy(G_io_apdu_buffer + tx, xymPublicKey, XYM_PUBLIC_KEY_LENGTH);
     tx += 32;
     return tx;
 }
