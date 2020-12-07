@@ -20,6 +20,7 @@
 #include "format.h"
 #include "fields.h"
 #include "readers.h"
+#include "printers.h"
 #include "xym/xym_helpers.h"
 #include "common.h"
 #include "base32.h"

@@ -15,25 +15,22 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-#include <string.h>
-#include "readers.h"
+#ifndef LEDGER_APP_XYM_PRINTERS_H
+#define LEDGER_APP_XYM_PRINTERS_H
 
-int8_t read_int8(const uint8_t *src) {
-    return (int8_t) *((uint8_t*) src);
-}
+#include <stdint.h>
+#include "parse/xym_parse.h"
 
-int16_t read_int16(const uint8_t *src) {
-    return (int16_t) *((uint8_t*) src);
-}
+enum _parser_error {
+    E_SUCCESS = 0,
+    E_NOT_ENOUGH_DATA = -1,
+    E_INVALID_DATA = -2,
+    E_TOO_MANY_FIELDS = -3,
+};
 
-uint8_t read_uint8(const uint8_t *src) {
-    return (uint8_t) *((uint8_t *)src);
-}
+int snprintf_hex(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength, uint8_t reverse);
+int snprintf_ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength);
+int snprintf_number(char *dst, uint16_t maxLen, uint64_t value);
+int snprintf_mosaic(char *dst, uint16_t maxLen, mosaic_t *mosaic, char *asset);
 
-uint16_t read_uint16(const uint8_t *src) {
-    return (uint16_t) *((uint16_t *)src);
-}
-
-uint64_t read_uint64(const uint8_t *src) {
-    return (uint64_t) *((uint32_t *)src);
-}
+#endif //LEDGER_APP_XYM_PRINTERS_H

@@ -19,19 +19,6 @@
 #define LEDGER_APP_XYM_READERS_H
 
 #include <stdint.h>
-#include "parse/xym_parse.h"
-
-enum _parser_error {
-    E_SUCCESS = 0,
-    E_NOT_ENOUGH_DATA = -1,
-    E_INVALID_DATA = -2,
-    E_TOO_MANY_FIELDS = -3,
-};
-
-int snprintf_hex(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength, uint8_t reverse);
-int snprintf_ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength);
-int snprintf_number(char *dst, uint16_t maxLen, uint64_t value);
-int snprintf_mosaic(char *dst, uint16_t maxLen, mosaic_t *mosaic, char *asset);
 
 int8_t read_int8(const uint8_t *src);
 int16_t read_int16(const uint8_t *src);
