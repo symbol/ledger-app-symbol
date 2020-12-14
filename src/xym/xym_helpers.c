@@ -16,6 +16,7 @@
 ********************************************************************************/
 #include "base32.h"
 #include "xym_helpers.h"
+#include <string.h>
 
 void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out) {
     char buffer[AMOUNT_MAX_SIZE];
@@ -43,7 +44,11 @@ void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *
             }
         }
         if (i >= AMOUNT_MAX_SIZE) {
+#ifdef FUZZ
+            return;
+#else
             THROW(0x6700);
+#endif
         }
     }
     // reverse order
@@ -72,6 +77,7 @@ void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *
     }
 }
 
+#ifndef FUZZ
 void sha_calculation(uint8_t *in, uint8_t inlen, uint8_t *out, uint8_t outlen) {
     cx_sha3_t hash;
     cx_sha3_init(&hash, 256);
@@ -107,3 +113,4 @@ void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNet
     rawAddress[24] = 0;
     base32_encode((const uint8_t *)rawAddress, 24, (char *) outAddress, outLen);
 }
+#endif
