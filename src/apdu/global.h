@@ -18,8 +18,12 @@
 #ifndef LEDGER_APP_XYM_GLOBAL_H
 #define LEDGER_APP_XYM_GLOBAL_H
 
+#ifndef FUZZ
 #include <os.h>
 #include <cx.h>
+#else
+#include <stdint.h>
+#endif
 #include <stdbool.h>
 #include "constants.h"
 #include "limitations.h"
@@ -35,7 +39,9 @@ typedef struct {
     uint32_t bip32Path[MAX_BIP32_PATH];
     uint8_t rawTx[MAX_RAW_TX];
     uint32_t rawTxLength;
+#ifndef FUZZ
     cx_curve_t curve;
+#endif
 } transaction_context_t;
 
 extern transaction_context_t transactionContext;
