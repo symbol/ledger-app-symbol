@@ -114,7 +114,7 @@ typedef struct {
 
 typedef struct {
     uint8_t transactionHash[XYM_TRANSACTION_HASH_LENGTH];
-    uint8_t reserved1;
+    uint8_t version;
     uint8_t networkType;
     uint16_t transactionType;
 } common_header_t;
@@ -182,22 +182,22 @@ static int parse_transfer_txn_content(parse_context_t *context, bool isMultisig)
     uint32_t length = txn->mosaicsCount * sizeof(mosaic_t) + txn->messageSize;
     BAIL_IF_ERR(!has_data(context, length), E_INVALID_DATA);
     // Show Recipient address
-    BAIL_IF(add_new_field(context, XYM_STR_RECIPIENT_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (uint8_t*) txn->recipientAddress));
+    BAIL_IF(add_new_field(context, XYM_STR_RECIPIENT_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) txn->recipientAddress));
     // Show sent mosaic count field
-    BAIL_IF(add_new_field(context, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->mosaicsCount));
+    BAIL_IF(add_new_field(context, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->mosaicsCount));
     // Show mosaics amount
     for (uint8_t i = 0; i < txn->mosaicsCount; i++) {
         mosaic_t *mosaic = (mosaic_t*) read_data(context, sizeof(mosaic_t));
         BAIL_IF_ERR(mosaic == NULL, E_NOT_ENOUGH_DATA);
         if (mosaic->mosaicId != XYM_TESTNET_MOSAIC_ID) {
             // Unknow mosaic notification
-            BAIL_IF(add_new_field(context, XYM_UNKNOWN_MOSAIC, STI_STR, 0, (uint8_t*) mosaic));
+            BAIL_IF(add_new_field(context, XYM_UNKNOWN_MOSAIC, STI_STR, 0, (const uint8_t*) mosaic));
         }
-        BAIL_IF(add_new_field(context, XYM_MOSAIC_AMOUNT, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (uint8_t*) mosaic)); // Read data and security check
+        BAIL_IF(add_new_field(context, XYM_MOSAIC_AMOUNT, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (const uint8_t*) mosaic)); // Read data and security check
     }
     if (txn->messageSize == 0) {
         // Show Empty Message
-        BAIL_IF(add_new_field(context, XYM_STR_TXN_MESSAGE, STI_MESSAGE, txn->messageSize, (uint8_t*) &txn->messageSize));
+        BAIL_IF(add_new_field(context, XYM_STR_TXN_MESSAGE, STI_MESSAGE, txn->messageSize, (const uint8_t*) &txn->messageSize));
     } else {
         // Show Message Type
         BAIL_IF(add_new_field(context, XYM_UINT8_TXN_MESSAGE_TYPE, STI_UINT8, sizeof(uint8_t), read_data(context, sizeof(uint8_t)))); // Read data and security check
@@ -206,7 +206,7 @@ static int parse_transfer_txn_content(parse_context_t *context, bool isMultisig)
     }
     if (!isMultisig) {
         // Show fee
-        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee));
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
     }
     return E_SUCCESS;
 }
@@ -221,17 +221,21 @@ static int parse_mosaic_definition_txn_content(parse_context_t *context, bool is
     mosaic_definition_data_t *txn = (mosaic_definition_data_t*) read_data(context, sizeof(mosaic_definition_data_t)); // Read data and security check
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     // Show mosaic id
-    BAIL_IF(add_new_field(context, XYM_UINT64_MOSAIC_ID, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->mosaicId));
+    BAIL_IF(add_new_field(context, XYM_UINT64_MOSAIC_ID, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->mosaicId));
     // Show mosaic divisibility
-    BAIL_IF(add_new_field(context, XYM_UINT8_MD_DIV, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->divisibility));
+    BAIL_IF(add_new_field(context, XYM_UINT8_MD_DIV, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->divisibility));
     // Show duration
-    BAIL_IF(add_new_field(context, XYM_UINT64_DURATION, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->duration));
+    BAIL_IF(add_new_field(context, XYM_UINT64_DURATION, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->duration));
     // Show mosaic flag (Transferable)
-    BAIL_IF(add_new_field(context, XYM_UINT8_MD_TRANS_FLAG, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->flags));
+    BAIL_IF(add_new_field(context, XYM_UINT8_MD_TRANS_FLAG, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->flags));
     // Show mosaic flag (Supply mutable)
-    BAIL_IF(add_new_field(context, XYM_UINT8_MD_SUPPLY_FLAG, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->flags));
+    BAIL_IF(add_new_field(context, XYM_UINT8_MD_SUPPLY_FLAG, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->flags));
     // Show mosaic flag (Restrictable)
-    BAIL_IF(add_new_field(context, XYM_UINT8_MD_RESTRICT_FLAG, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->flags));
+    BAIL_IF(add_new_field(context, XYM_UINT8_MD_RESTRICT_FLAG, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->flags));
+    if (!isMultisig) {
+        // Show fee
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
+    }
     return E_SUCCESS;
 }
 
@@ -245,11 +249,15 @@ static int parse_mosaic_supply_change_txn_content(parse_context_t *context, bool
     mosaic_supply_change_data_t *txn = (mosaic_supply_change_data_t*) read_data(context, sizeof(mosaic_supply_change_data_t)); // Read data and security check
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     // Show mosaic id
-    BAIL_IF(add_new_field(context, XYM_UINT64_MOSAIC_ID, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->mosaic.mosaicId));
+    BAIL_IF(add_new_field(context, XYM_UINT64_MOSAIC_ID, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->mosaic.mosaicId));
     // Show supply change action
-    BAIL_IF(add_new_field(context, XYM_UINT8_MSC_ACTION, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->action));
+    BAIL_IF(add_new_field(context, XYM_UINT8_MSC_ACTION, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->action));
     // Show amount
-    BAIL_IF(add_new_field(context, XYM_UINT64_MSC_AMOUNT, STI_UINT64, sizeof(mosaic_t), (uint8_t*) &txn->mosaic.amount));
+    BAIL_IF(add_new_field(context, XYM_UINT64_MSC_AMOUNT, STI_UINT64, sizeof(mosaic_t), (const uint8_t*) &txn->mosaic.amount));
+    if (!isMultisig) {
+        // Show fee
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
+    }
     return E_SUCCESS;
 }
 
@@ -263,21 +271,25 @@ static int parse_multisig_account_modification_txn_content(parse_context_t *cont
     multisig_account_t *txn = (multisig_account_t*) read_data(context, sizeof(multisig_account_t)); // Read data and security check
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     // Show address additions count
-    BAIL_IF(add_new_field(context, XYM_UINT8_MAM_ADD_COUNT, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->addressAdditionsCount));
+    BAIL_IF(add_new_field(context, XYM_UINT8_MAM_ADD_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->addressAdditionsCount));
     // Show list of addition address
     for (uint8_t i = 0; i < txn->addressAdditionsCount; i++) {
         BAIL_IF(add_new_field(context, XYM_STR_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, read_data(context, XYM_ADDRESS_LENGTH))); // Read data and security check
     }
     // Show address deletions count
-    BAIL_IF(add_new_field(context, XYM_UINT8_MAM_DEL_COUNT, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->addressDeletionsCount));
+    BAIL_IF(add_new_field(context, XYM_UINT8_MAM_DEL_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->addressDeletionsCount));
     // Show list of addition address
     for (uint8_t i = 0; i < txn->addressDeletionsCount; i++) {
         BAIL_IF(add_new_field(context, XYM_STR_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, read_data(context, XYM_ADDRESS_LENGTH))); // Read data and security check
     }
     // Show min approval delta
-    BAIL_IF(add_new_field(context, XYM_INT8_MAM_APPROVAL_DELTA, STI_INT8, sizeof(int8_t), (uint8_t*) &txn->minApprovalDelta));
+    BAIL_IF(add_new_field(context, XYM_INT8_MAM_APPROVAL_DELTA, STI_INT8, sizeof(int8_t), (const uint8_t*) &txn->minApprovalDelta));
     // Show min removal delta
-    BAIL_IF(add_new_field(context, XYM_INT8_MAM_REMOVAL_DELTA, STI_INT8, sizeof(int8_t), (uint8_t*) &txn->minRemovalDelta));
+    BAIL_IF(add_new_field(context, XYM_INT8_MAM_REMOVAL_DELTA, STI_INT8, sizeof(int8_t), (const uint8_t*) &txn->minRemovalDelta));
+    if (!isMultisig) {
+        // Show fee
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
+    }
     return E_SUCCESS;
 }
 
@@ -291,7 +303,7 @@ static int parse_namespace_registration_txn_content(parse_context_t *context, bo
     ns_header_t *txn = (ns_header_t*) read_data(context, sizeof(ns_header_t)); // Read data and security check
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     // Show namespace reg type
-    BAIL_IF(add_new_field(context, XYM_UINT8_NS_REG_TYPE, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->registrationType));
+    BAIL_IF(add_new_field(context, XYM_UINT8_NS_REG_TYPE, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->registrationType));
     // Show namespace/sub-namespace name
     BAIL_IF(add_new_field(context, XYM_STR_NAMESPACE, STI_STR, txn->nameSize, read_data(context, txn->nameSize))); // Read data and security check
     // Show Duration/ParentID
@@ -299,7 +311,7 @@ static int parse_namespace_registration_txn_content(parse_context_t *context, bo
         sizeof(uint64_t), (uint8_t*) &txn->duration));
     if (!isMultisig) {
         // Show fee
-        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee));
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
     }
     return E_SUCCESS;
 }
@@ -314,16 +326,16 @@ static int parse_account_metadata_txn_content(parse_context_t *context, bool isM
     am_header_t *txn = (am_header_t*) read_data(context, sizeof(am_header_t)); // Read data and security check
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     // Show metadata target address
-    BAIL_IF(add_new_field(context, XYM_STR_METADATA_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (uint8_t*) &txn->address_data.address));
+    BAIL_IF(add_new_field(context, XYM_STR_METADATA_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) &txn->address_data.address));
     // Show scope metadata key
-    BAIL_IF(add_new_field(context, XYM_UINT64_METADATA_KEY, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->address_data.metadataKey));
+    BAIL_IF(add_new_field(context, XYM_UINT64_METADATA_KEY, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->address_data.metadataKey));
     // Show different value
     BAIL_IF(add_new_field(context, XYM_STR_METADATA_VALUE, STI_MESSAGE, txn->value_data.valueSize, read_data(context, txn->value_data.valueSize))); // Read data and security check
     // Show value size delta
-    BAIL_IF(add_new_field(context, XYM_INT16_VALUE_DELTA, STI_INT16, sizeof(uint16_t), (uint8_t*) &txn->value_data.valueSizeDelta));
+    BAIL_IF(add_new_field(context, XYM_INT16_VALUE_DELTA, STI_INT16, sizeof(uint16_t), (const uint8_t*) &txn->value_data.valueSizeDelta));
     if (!isMultisig) {
         // Show fee
-        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee));
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
     }
     return E_SUCCESS;
 }
@@ -338,18 +350,18 @@ static int parse_mosaic_namespace_metadata_txn_content(parse_context_t *context,
     mnm_header_t *txn = (mnm_header_t*) read_data(context, sizeof(mnm_header_t)); // Read data and security check
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     // Show metadata target address
-    BAIL_IF(add_new_field(context, XYM_STR_METADATA_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (uint8_t*) &txn->address_data.address));
+    BAIL_IF(add_new_field(context, XYM_STR_METADATA_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) &txn->address_data.address));
     // Show target mosaic/namespace id
-    BAIL_IF(add_new_field(context, isMosaicMetadata ? XYM_UINT64_MOSAIC_ID : XYM_UINT64_NS_ID, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->mosaicNamespaceId));
+    BAIL_IF(add_new_field(context, isMosaicMetadata ? XYM_UINT64_MOSAIC_ID : XYM_UINT64_NS_ID, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->mosaicNamespaceId));
     // Show scope metadata key
-    BAIL_IF(add_new_field(context, XYM_UINT64_METADATA_KEY, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->address_data.metadataKey));
+    BAIL_IF(add_new_field(context, XYM_UINT64_METADATA_KEY, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->address_data.metadataKey));
     // Show different value
     BAIL_IF(add_new_field(context, XYM_STR_METADATA_VALUE, STI_MESSAGE, txn->value_data.valueSize, read_data(context, txn->value_data.valueSize))); // Read data and security check
     // Show value size delta
-    BAIL_IF(add_new_field(context, XYM_INT16_VALUE_DELTA, STI_INT16, sizeof(uint16_t), (uint8_t*) &txn->value_data.valueSizeDelta));
+    BAIL_IF(add_new_field(context, XYM_INT16_VALUE_DELTA, STI_INT16, sizeof(uint16_t), (const uint8_t*) &txn->value_data.valueSizeDelta));
     if (!isMultisig) {
         // Show fee
-        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee));
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
     }
     return E_SUCCESS;
 }
@@ -364,14 +376,14 @@ static int parse_address_alias_txn_content(parse_context_t *context, bool isMult
     aa_header_t *txn = (aa_header_t*) read_data(context, sizeof(aa_header_t)); // Read data and security check
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     // Show alias type
-    BAIL_IF(add_new_field(context, XYM_UINT8_AA_TYPE, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->aliasAction));
+    BAIL_IF(add_new_field(context, XYM_UINT8_AA_TYPE, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->aliasAction));
     // Show namespace id
-    BAIL_IF(add_new_field(context, XYM_UINT64_NS_ID, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->namespaceId));
+    BAIL_IF(add_new_field(context, XYM_UINT64_NS_ID, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->namespaceId));
     // Show Recipient address
-    BAIL_IF(add_new_field(context, XYM_STR_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (uint8_t*) txn->address));
+    BAIL_IF(add_new_field(context, XYM_STR_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) txn->address));
     if (!isMultisig) {
         // Show fee
-        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee));
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
     }
     return E_SUCCESS;
 }
@@ -385,15 +397,15 @@ static int parse_mosaic_alias_txn_content(parse_context_t *context, bool isMulti
     }
     ma_header_t *txn = (ma_header_t*) read_data(context, sizeof(ma_header_t)); // Read data and security check
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
-    // Show alisac type
-    BAIL_IF(add_new_field(context, XYM_UINT8_AA_TYPE, STI_UINT8, sizeof(uint8_t), (uint8_t*) &txn->aliasAction));
+    // Show alisa type
+    BAIL_IF(add_new_field(context, XYM_UINT8_AA_TYPE, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->aliasAction));
     // Show namespace id
-    BAIL_IF(add_new_field(context, XYM_UINT64_NS_ID, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->namespaceId));
+    BAIL_IF(add_new_field(context, XYM_UINT64_NS_ID, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->namespaceId));
     // Show mosaic
-    BAIL_IF(add_new_field(context, XYM_UINT64_MOSAIC_ID, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->mosaicId));
+    BAIL_IF(add_new_field(context, XYM_UINT64_MOSAIC_ID, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->mosaicId));
     if (!isMultisig) {
         // Show fee
-        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee));
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
     }
     return E_SUCCESS;
 }
@@ -408,14 +420,14 @@ static int parse_hash_lock_txn_content(parse_context_t *context, bool isMultisig
     hl_header_t *txn = (hl_header_t*) read_data(context, sizeof(hl_header_t)); // Read data and security check
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     // Show lock quantity
-    BAIL_IF(add_new_field(context, XYM_MOSAIC_HL_QUANTITY, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (uint8_t*) &txn->mosaic));
+    BAIL_IF(add_new_field(context, XYM_MOSAIC_HL_QUANTITY, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (const uint8_t*) &txn->mosaic));
     // Show duration
-    BAIL_IF(add_new_field(context, XYM_UINT64_DURATION, STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->blockDuration));
+    BAIL_IF(add_new_field(context, XYM_UINT64_DURATION, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->blockDuration));
     // Show transaction hash
-    BAIL_IF(add_new_field(context, XYM_HASH256_HL_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, (uint8_t*) &txn->aggregateBondedHash));
+    BAIL_IF(add_new_field(context, XYM_HASH256_HL_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, (const uint8_t*) &txn->aggregateBondedHash));
     if (!isMultisig) {
         // Show tx fee
-        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee));
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
     }
     return E_SUCCESS;
 }
@@ -429,7 +441,7 @@ static int parse_inner_txn_content(parse_context_t *context, uint32_t len) {
         BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
         totalSize += txn->size;
         // Show Transaction type
-        BAIL_IF(add_new_field(context, XYM_UINT16_INNER_TRANSACTION_TYPE, STI_UINT16, sizeof(uint16_t), (uint8_t*) &txn->innerTxType));
+        BAIL_IF(add_new_field(context, XYM_UINT16_INNER_TRANSACTION_TYPE, STI_UINT16, sizeof(uint16_t), (const uint8_t*) &txn->innerTxType));
         switch (txn->innerTxType) {
             case XYM_TXN_TRANSFER:
                 BAIL_IF(parse_transfer_txn_content(context, true));
@@ -440,6 +452,9 @@ static int parse_inner_txn_content(parse_context_t *context, uint32_t len) {
                 break;
             case XYM_TXN_MOSAIC_SUPPLY_CHANGE:
                 BAIL_IF(parse_mosaic_supply_change_txn_content(context, true));
+                break;
+            case XYM_TXN_MODIFY_MULTISIG_ACCOUNT:
+                BAIL_IF(parse_multisig_account_modification_txn_content(context, true));
                 break;
             case XYM_TXN_REGISTER_NAMESPACE:
                 BAIL_IF(parse_namespace_registration_txn_content(context, true));
@@ -461,9 +476,6 @@ static int parse_inner_txn_content(parse_context_t *context, uint32_t len) {
                 break;
             case XYM_TXN_HASH_LOCK:
                 BAIL_IF(parse_hash_lock_txn_content(context, true));
-                break;
-            case XYM_TXN_MODIFY_MULTISIG_ACCOUNT:
-                BAIL_IF(parse_multisig_account_modification_txn_content(context, true));
                 break;
             default:
                 return E_INVALID_DATA;
@@ -489,12 +501,12 @@ static int parse_aggregate_txn_content(parse_context_t *context) {
         aggregate_txn_t *txn = (aggregate_txn_t*) read_data(context, sizeof(aggregate_txn_t)); // Read data and security check
         BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
         // Show transaction hash
-        BAIL_IF(add_new_field(context, XYM_HASH256_AGG_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, (uint8_t*) &txn->transactionHash));
+        BAIL_IF(add_new_field(context, XYM_HASH256_AGG_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, (const uint8_t*) &txn->transactionHash));
         BAIL_IF_ERR(!has_data(context, txn->payloadSize), E_INVALID_DATA);
         BAIL_IF(parse_inner_txn_content(context, txn->payloadSize));
     }
     // Show max fee of aggregate tx
-    BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (uint8_t*) &fee->maxFee));
+    BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
     return E_SUCCESS;
 }
 
@@ -502,7 +514,7 @@ static int parse_txn_detail(parse_context_t *context, common_header_t *txn) {
     int result;
     context->result.numFields = 0;
     // Show Transaction type
-    BAIL_IF(add_new_field(context, XYM_UINT16_TRANSACTION_TYPE, STI_UINT16, sizeof(uint16_t), (uint8_t*) &context->transactionType));
+    BAIL_IF(add_new_field(context, XYM_UINT16_TRANSACTION_TYPE, STI_UINT16, sizeof(uint16_t), (const uint8_t*) &context->transactionType));
     switch (txn->transactionType) {
         case XYM_TXN_TRANSFER:
             result = parse_transfer_txn_content(context, false);
@@ -513,11 +525,11 @@ static int parse_txn_detail(parse_context_t *context, common_header_t *txn) {
         case XYM_TXN_AGGREGATE_BONDED:
             result = parse_aggregate_txn_content(context);
             break;
+        case XYM_TXN_MODIFY_MULTISIG_ACCOUNT:
+            result = parse_multisig_account_modification_txn_content(context, false);
+            break;
         case XYM_TXN_REGISTER_NAMESPACE:
             result = parse_namespace_registration_txn_content(context, false);
-            break;
-        case XYM_TXN_ACCOUNT_METADATA:
-            result = parse_account_metadata_txn_content(context, false);
             break;
         case XYM_TXN_ADDRESS_ALIAS:
             result = parse_address_alias_txn_content(context, false);
@@ -530,9 +542,6 @@ static int parse_txn_detail(parse_context_t *context, common_header_t *txn) {
             break;
         case XYM_TXN_MOSAIC_SUPPLY_CHANGE:
             result = parse_mosaic_supply_change_txn_content(context, false);
-            break;
-        case XYM_TXN_MODIFY_MULTISIG_ACCOUNT:
-            result = parse_multisig_account_modification_txn_content(context, false);
             break;
         case XYM_TXN_HASH_LOCK:
             result = parse_hash_lock_txn_content(context, false);
@@ -553,7 +562,9 @@ static void set_sign_data_length(parse_context_t *context) {
 
         if (memcmp(TESTNET_GENERATION_HASH, context->data, XYM_TRANSACTION_HASH_LENGTH) == 0) {
             // Sign data from generation hash to transaction hash
-            transactionContext.rawTxLength = 84;
+            // XYM_AGGREGATE_SIGNING_LENGTH = XYM_TRANSACTION_HASH_LENGTH
+            //                                + sizeof(common_header_t) + sizeof(txn_fee_t) = 84
+            transactionContext.rawTxLength = XYM_AGGREGATE_SIGNING_LENGTH;
         } else {
             // Sign transaction hash only
             transactionContext.rawTxLength = XYM_TRANSACTION_HASH_LENGTH;
