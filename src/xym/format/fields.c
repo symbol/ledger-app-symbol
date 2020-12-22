@@ -34,6 +34,7 @@ void resolve_fieldname(const field_t *field, char* dst) {
             CASE_FIELDNAME(XYM_UINT8_NS_REG_TYPE, "Namespace Type")
             CASE_FIELDNAME(XYM_UINT8_AA_TYPE, "Alias Type")
             CASE_FIELDNAME(XYM_UINT8_MD_DIV, "Divisibility")
+            CASE_FIELDNAME(XYM_UINT8_KL_TYPE, "Action")
             CASE_FIELDNAME(XYM_UINT8_MD_TRANS_FLAG, "Transferable")
             CASE_FIELDNAME(XYM_UINT8_MD_SUPPLY_FLAG, "Supply Mutable")
             CASE_FIELDNAME(XYM_UINT8_MD_RESTRICT_FLAG, "Restrictable")
@@ -70,6 +71,15 @@ void resolve_fieldname(const field_t *field, char* dst) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_HASH256_AGG_HASH, "Agg. Tx Hash")
             CASE_FIELDNAME(XYM_HASH256_HL_HASH, "Tx Hash")
+        }
+    }
+
+    if (field->dataType == STI_PUBLIC_KEY) {
+        switch (field->id) {
+            CASE_FIELDNAME(XYM_PUBLICKEY_ACCOUNT_KEY_LINK, "Linked Acct. PbK")
+            CASE_FIELDNAME(XYM_PUBLICKEY_NODE_KEY_LINK, "Linked Node PbK")
+            CASE_FIELDNAME(XYM_PUBLICKEY_VOTING_KEY_LINK, "LinkedVotingPbK")
+            CASE_FIELDNAME(XYM_PUBLICKEY_VRF_KEY_LINK, "Linked Vrf PbK")
         }
     }
 

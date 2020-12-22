@@ -67,6 +67,12 @@ static void uint8_formatter(const field_t *field, char *dst) {
         } else if (value == 1) {
             SNPRINTF(dst, "%s", "Link address");
         }
+    } else if (field->id == XYM_UINT8_KL_TYPE) {
+        if (value == 0x00) {
+            SNPRINTF(dst, "%s", "Unlink");
+        } else if (value == 0x01) {
+            SNPRINTF(dst, "%s", "Link");
+        }
     } else if (field->id == XYM_UINT8_NS_REG_TYPE) {
         if (value == 0) {
             SNPRINTF(dst, "%s", "Root namespace");
@@ -115,6 +121,10 @@ static void uint16_formatter(const field_t *field, char *dst) {
         CASE_FIELDVALUE(XYM_TXN_MOSAIC_DEFINITION, "Mosaic definition")
         CASE_FIELDVALUE(XYM_TXN_MOSAIC_SUPPLY_CHANGE, "Mosaic Supply Change")
         CASE_FIELDVALUE(XYM_TXN_MODIFY_MULTISIG_ACCOUNT, "Modify Multisig Account")
+        CASE_FIELDVALUE(XYM_TXN_ACCOUNT_KEY_LINK, "Account Key Link")
+        CASE_FIELDVALUE(XYM_TXN_NODE_KEY_LINK, "Node Key Link")
+        CASE_FIELDVALUE(XYM_TXN_VOTING_KEY_LINK, "Voting Key Link")
+        CASE_FIELDVALUE(XYM_TXN_VRF_KEY_LINK, "Vrf Key Link")
         CASE_FIELDVALUE(XYM_TXN_AGGREGATE_COMPLETE, "Aggregate Complete")
         CASE_FIELDVALUE(XYM_TXN_AGGREGATE_BONDED, "Aggregate Bonded")
         CASE_FIELDVALUE(XYM_TXN_HASH_LOCK, "Hash Lock")
@@ -200,6 +210,8 @@ static field_formatter_t get_formatter(const field_t *field) {
         case STI_UINT64:
             return uint64_formatter;
         case STI_HASH256:
+            return hash_formatter;
+        case STI_PUBLIC_KEY:
             return hash_formatter;
         case STI_ADDRESS:
             return address_formatter;
