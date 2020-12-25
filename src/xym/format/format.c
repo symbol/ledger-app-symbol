@@ -177,6 +177,14 @@ static void xym_formatter(const field_t *field, char *dst) {
     }
 }
 
+static void hex_msg_formatter(const field_t *field, char *dst) {
+    if (field->length >= MAX_FIELD_LEN/2 - 1) {
+        snprintf_hex2ascii(dst, MAX_FIELD_LEN, &field->data[0], MAX_FIELD_LEN/2 - 1);
+    } else {
+        snprintf_hex2ascii(dst, MAX_FIELD_LEN, &field->data[0], field->length);
+    }
+}
+
 static void msg_formatter(const field_t *field, char *dst) {
     if (field->length == 0) {
         SNPRINTF(dst, "%s", "<empty msg>");
@@ -221,6 +229,8 @@ static field_formatter_t get_formatter(const field_t *field) {
             return xym_formatter;
         case STI_MESSAGE:
             return msg_formatter;
+        case STI_HEX_MESSAGE:
+            return hex_msg_formatter;
         case STI_STR:
             return string_formatter;
         default:

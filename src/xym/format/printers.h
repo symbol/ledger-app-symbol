@@ -29,6 +29,7 @@ enum _parser_error {
 };
 
 int snprintf_hex(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength, uint8_t reverse);
+int snprintf_hex2ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength);
 int snprintf_ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength);
 int snprintf_number(char *dst, uint16_t maxLen, uint64_t value);
 int snprintf_mosaic(char *dst, uint16_t maxLen, mosaic_t *mosaic, char *asset);

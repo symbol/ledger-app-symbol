@@ -111,6 +111,15 @@ void resolve_fieldname(const field_t *field, char* dst) {
         }
     }
 
+    if (field->dataType == STI_HEX_MESSAGE) {
+        switch (field->id) {
+            CASE_FIELDNAME(XYM_STR_TXN_HARVESTING, "Harvesting Message")
+            CASE_FIELDNAME(XYM_STR_TXN_HARVESTING_1, "Harvest. Msg 1")
+            CASE_FIELDNAME(XYM_STR_TXN_HARVESTING_2, "Harvest. Msg 2")
+            CASE_FIELDNAME(XYM_STR_TXN_HARVESTING_3, "Harvest. Msg 3")
+        }
+    }
+
     if (field->dataType == STI_STR) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_UNKNOWN_MOSAIC, "Unknown Mosaic")

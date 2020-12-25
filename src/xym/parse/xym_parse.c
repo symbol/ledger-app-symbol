@@ -204,10 +204,24 @@ static int parse_transfer_txn_content(parse_context_t *context, bool isMultisig)
         // Show Empty Message
         BAIL_IF(add_new_field(context, XYM_STR_TXN_MESSAGE, STI_MESSAGE, txn->messageSize, (const uint8_t*) &txn->messageSize));
     } else {
+        BAIL_IF_ERR(!has_data(context, sizeof(uint8_t)), E_INVALID_DATA);
+        const uint8_t *msgType = context->data + context->offset;
         // Show Message Type
-        BAIL_IF(add_new_field(context, XYM_UINT8_TXN_MESSAGE_TYPE, STI_UINT8, sizeof(uint8_t), read_data(context, sizeof(uint8_t)))); // Read data and security check
-        // Show Message
-        BAIL_IF(add_new_field(context, XYM_STR_TXN_MESSAGE, STI_MESSAGE, txn->messageSize - 1, read_data(context, txn->messageSize - 1))); // Read data and security check
+        BAIL_IF(add_new_field(context, XYM_UINT8_TXN_MESSAGE_TYPE, STI_UINT8, sizeof(uint8_t), msgType)); // Read data and security check
+        if (*msgType == XYM_PERSISTENT_DELEGATED_HARVESTING) {
+            // Show persistent harvesting delegation message
+        #if defined(TARGET_NANOX)
+            BAIL_IF(add_new_field(context, XYM_STR_TXN_HARVESTING, STI_HEX_MESSAGE, txn->messageSize, read_data(context, txn->messageSize))); // Read data and security check
+        #elif defined(TARGET_NANOS)
+            BAIL_IF(add_new_field(context, XYM_STR_TXN_HARVESTING_1, STI_HEX_MESSAGE, MAX_FIELD_LEN/2 - 1, read_data(context, MAX_FIELD_LEN/2 - 1))); // Read data and security check
+            BAIL_IF(add_new_field(context, XYM_STR_TXN_HARVESTING_2, STI_HEX_MESSAGE, MAX_FIELD_LEN/2 - 1, read_data(context, MAX_FIELD_LEN/2 - 1))); // Read data and security check
+            BAIL_IF(add_new_field(context, XYM_STR_TXN_HARVESTING_3, STI_HEX_MESSAGE, txn->messageSize - MAX_FIELD_LEN + 2, read_data(context, txn->messageSize - MAX_FIELD_LEN + 2))); // Read data and security check
+        #endif
+        } else {
+            BAIL_IF_ERR(move_pos(context, 1) == NULL, E_NOT_ENOUGH_DATA);  // Message type
+            // Show Message in plain text
+            BAIL_IF(add_new_field(context, XYM_STR_TXN_MESSAGE, STI_MESSAGE, txn->messageSize - 1, read_data(context, txn->messageSize - 1))); // Read data and security check
+        }
     }
     if (!isMultisig) {
         // Show fee

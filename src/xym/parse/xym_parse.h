@@ -21,6 +21,8 @@
 #include "xym/format/fields.h"
 #include "xym/xym_helpers.h"
 
+#define XYM_PERSISTENT_DELEGATED_HARVESTING 0xFE
+
 #pragma pack(push, 1)
 typedef struct {
     uint64_t mosaicId;

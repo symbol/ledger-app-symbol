@@ -42,6 +42,23 @@ int snprintf_number(char *dst, uint16_t len, uint64_t value) {
     return n;
 }
 
+/** Convert 1 hex byte to 2 characters */
+char hex2ascii(uint8_t input){
+    return input > 9 ? (char)(input + 87) : (char)(input + 48);
+}
+
+int snprintf_hex2ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength) {
+    if (2 * dataLength > maxLen - 1 || maxLen < 1 || dataLength < 1) {
+        return E_NOT_ENOUGH_DATA;
+    }
+    for (uint16_t i = 0; i < dataLength; i++) {
+        dst[2*i] = hex2ascii((src[i] & 0xf0) >> 4);
+        dst[2*i+1] = hex2ascii(src[i] & 0x0f);
+    }
+    dst[2*dataLength] = '\0';
+    return 2*dataLength;
+}
+
 int snprintf_hex(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength, uint8_t reverse) {
     if (2 * dataLength > maxLen - 1 || maxLen < 1 || dataLength < 1) {
         return E_NOT_ENOUGH_DATA;
