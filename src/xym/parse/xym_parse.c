@@ -472,7 +472,7 @@ static int parse_hash_lock_txn_content(parse_context_t *context, bool isMultisig
     return E_SUCCESS;
 }
 
-static int parse_inner_txn_content(parse_context_t *context, uint32_t len) {
+static int parse_inner_txn_content(parse_context_t *context, uint32_t len, bool isCosigning) {
     uint32_t totalSize = 0;
     do {
         // get header first
@@ -481,7 +481,7 @@ static int parse_inner_txn_content(parse_context_t *context, uint32_t len) {
         BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
         totalSize += txn->size;
         // Show Transaction type
-        BAIL_IF(add_new_field(context, XYM_UINT16_INNER_TRANSACTION_TYPE, STI_UINT16, sizeof(uint16_t), (const uint8_t*) &txn->innerTxType));
+        BAIL_IF(add_new_field(context, isCosigning ? XYM_UINT16_TRANSACTION_DETAIL_TYPE : XYM_UINT16_INNER_TRANSACTION_TYPE, STI_UINT16, sizeof(uint16_t), (const uint8_t*) &txn->innerTxType));
         switch (txn->innerTxType) {
             case XYM_TXN_TRANSFER:
                 BAIL_IF(parse_transfer_txn_content(context, true));
@@ -543,17 +543,14 @@ static int parse_aggregate_txn_content(parse_context_t *context) {
     // get header first
     txn_fee_t *fee = (txn_fee_t*) read_data(context, sizeof(txn_fee_t)); // Read data and security check
     BAIL_IF_ERR(fee == NULL, E_NOT_ENOUGH_DATA);
-    if (transactionContext.rawTxLength == XYM_TRANSACTION_HASH_LENGTH) {
-        // Show transaction hash
-        BAIL_IF(add_new_field(context, XYM_HASH256_AGG_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, context->data));
-    } else {
-        aggregate_txn_t *txn = (aggregate_txn_t*) read_data(context, sizeof(aggregate_txn_t)); // Read data and security check
-        BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
-        // Show transaction hash
-        BAIL_IF(add_new_field(context, XYM_HASH256_AGG_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, (const uint8_t*) &txn->transactionHash));
-        BAIL_IF_ERR(!has_data(context, txn->payloadSize), E_INVALID_DATA);
-        BAIL_IF(parse_inner_txn_content(context, txn->payloadSize));
-    }
+    aggregate_txn_t *txn = (aggregate_txn_t*) read_data(context, sizeof(aggregate_txn_t)); // Read data and security check
+    BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
+    bool isCosigning = transactionContext.rawTxLength == XYM_TRANSACTION_HASH_LENGTH;
+    const uint8_t* p_tx_hash = isCosigning ? context-> data : txn->transactionHash;
+    // Show transaction hash
+    BAIL_IF(add_new_field(context, XYM_HASH256_AGG_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, p_tx_hash));
+    BAIL_IF_ERR(!has_data(context, txn->payloadSize), E_INVALID_DATA);
+    BAIL_IF(parse_inner_txn_content(context, txn->payloadSize, isCosigning));
     // Show max fee of aggregate tx
     BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
     return E_SUCCESS;
@@ -615,7 +612,7 @@ static void set_sign_data_length(parse_context_t *context) {
             //                                + sizeof(common_header_t) + sizeof(txn_fee_t) = 84
             transactionContext.rawTxLength = XYM_AGGREGATE_SIGNING_LENGTH;
         } else {
-            // Sign transaction hash only
+            // Sign transaction hash only (multisig cosigning transaction)
             transactionContext.rawTxLength = XYM_TRANSACTION_HASH_LENGTH;
         }
     } else {

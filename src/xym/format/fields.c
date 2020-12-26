@@ -53,6 +53,7 @@ void resolve_fieldname(const field_t *field, char* dst) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_UINT16_TRANSACTION_TYPE, "Transaction Type")
             CASE_FIELDNAME(XYM_UINT16_INNER_TRANSACTION_TYPE, "Inner TX Type")
+            CASE_FIELDNAME(XYM_UINT16_TRANSACTION_DETAIL_TYPE, "Detail TX Type")
         }
     }
 
