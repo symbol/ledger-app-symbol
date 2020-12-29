@@ -16,6 +16,7 @@
 *  limitations under the License.
 ********************************************************************************/
 #include <string.h>
+#include <stdint.h>
 #include "printers.h"
 
 int snprintf_number(char *dst, uint16_t len, uint64_t value) {
