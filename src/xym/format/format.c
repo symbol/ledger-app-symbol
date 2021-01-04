@@ -52,7 +52,7 @@ static void int16_formatter(const field_t *field, char *dst) {
 static void uint8_formatter(const field_t *field, char *dst) {
     uint8_t value = read_uint8(field->data);
     if (field->id == XYM_UINT8_MOSAIC_COUNT) {
-        SNPRINTF(dst, "Found %d txs", value);
+        SNPRINTF(dst, "Found %d", value);
     } else if (field->id == XYM_UINT8_TXN_MESSAGE_TYPE) {
         if (value == 0x00) {
             SNPRINTF(dst, "%s", "Plain text");

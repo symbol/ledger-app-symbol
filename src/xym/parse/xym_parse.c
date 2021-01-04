@@ -194,6 +194,9 @@ static int parse_transfer_txn_content(parse_context_t *context, bool isMultisig)
     for (uint8_t i = 0; i < txn->mosaicsCount; i++) {
         mosaic_t *mosaic = (mosaic_t*) read_data(context, sizeof(mosaic_t));
         BAIL_IF_ERR(mosaic == NULL, E_NOT_ENOUGH_DATA);
+        if (txn->mosaicsCount == 1 && mosaic->mosaicId == XYM_TESTNET_MOSAIC_ID) {
+            context->result.numFields--;
+        }
         if (mosaic->mosaicId != XYM_TESTNET_MOSAIC_ID) {
             // Unknow mosaic notification
             BAIL_IF(add_new_field(context, XYM_UNKNOWN_MOSAIC, STI_STR, 0, (const uint8_t*) mosaic));

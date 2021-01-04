@@ -45,7 +45,7 @@ int snprintf_number(char *dst, uint16_t len, uint64_t value) {
 
 /** Convert 1 hex byte to 2 characters */
 char hex2ascii(uint8_t input){
-    return input > 9 ? (char)(input + 87) : (char)(input + 48);
+    return input > 9 ? (char)(input + 55) : (char)(input + 48);
 }
 
 int snprintf_hex2ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength) {
