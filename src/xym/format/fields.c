@@ -54,6 +54,10 @@ void resolve_fieldname(const field_t *field, char* dst) {
             CASE_FIELDNAME(XYM_UINT16_TRANSACTION_TYPE, "Transaction Type")
             CASE_FIELDNAME(XYM_UINT16_INNER_TRANSACTION_TYPE, "Inner TX Type")
             CASE_FIELDNAME(XYM_UINT16_TRANSACTION_DETAIL_TYPE, "Detail TX Type")
+            CASE_FIELDNAME(XYM_UINT16_ENTITY_RESTRICT_OPERATION, "Operation Type")
+            CASE_FIELDNAME(XYM_UINT16_AR_RESTRICT_TYPE, "Restriction Flag")
+            CASE_FIELDNAME(XYM_UINT16_AR_RESTRICT_DIRECTION, "Restriction Flag")
+            CASE_FIELDNAME(XYM_UINT16_AR_RESTRICT_OPERATION, "Restriction Flag")
         }
     }
 
@@ -125,6 +129,22 @@ void resolve_fieldname(const field_t *field, char* dst) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_UNKNOWN_MOSAIC, "Unknown Mosaic")
             CASE_FIELDNAME(XYM_STR_NAMESPACE, "Name")
+        }
+    }
+
+    if (field->dataType == STI_UINT8_ADDITION) {
+        switch (field->id) {
+            CASE_FIELDNAME(XYM_UINT8_AA_RESTRICTION, "Addition Count")
+            CASE_FIELDNAME(XYM_UINT8_AM_RESTRICTION, "Addition Count")
+            CASE_FIELDNAME(XYM_UINT8_AO_RESTRICTION, "Addition Count")
+        }
+    }
+
+    if (field->dataType == STI_UINT8_DELETION) {
+        switch (field->id) {
+            CASE_FIELDNAME(XYM_UINT8_AA_RESTRICTION, "Deletion Count")
+            CASE_FIELDNAME(XYM_UINT8_AM_RESTRICTION, "Deletion Count")
+            CASE_FIELDNAME(XYM_UINT8_AO_RESTRICTION, "Deletion Count")
         }
     }
 

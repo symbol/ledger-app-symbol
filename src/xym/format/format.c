@@ -108,28 +108,72 @@ static void uint8_formatter(const field_t *field, char *dst) {
     }
 }
 
+static void uint8_custom_formatter(const field_t *field, char *dst) {
+    uint8_t value = read_uint8(field->data);
+    if (value != 0) {
+        if (field->id == XYM_UINT8_AA_RESTRICTION) {
+            SNPRINTF(dst, "%d %s", value, "address(es)");
+        } else if (field->id == XYM_UINT8_AM_RESTRICTION) {
+            SNPRINTF(dst, "%d %s", value, "mosaic(s)");
+        } else if (field->id == XYM_UINT8_AO_RESTRICTION) {
+            SNPRINTF(dst, "%d %s", value, "operation(s)");
+        }
+    } else {
+        SNPRINTF(dst, "%s", "Not change");
+    }
+}
+
 static void uint16_formatter(const field_t *field, char *dst) {
     uint16_t value = read_uint16(field->data);
-    switch (value) {
-        CASE_FIELDVALUE(XYM_TXN_TRANSFER, "Transfer")
-        CASE_FIELDVALUE(XYM_TXN_REGISTER_NAMESPACE, "Register Namespace")
-        CASE_FIELDVALUE(XYM_TXN_ACCOUNT_METADATA, "Account Metadata")
-        CASE_FIELDVALUE(XYM_TXN_MOSAIC_METADATA, "Mosaic Metadata")
-        CASE_FIELDVALUE(XYM_TXN_NAMESPACE_METADATA, "Namespace Metadata")
-        CASE_FIELDVALUE(XYM_TXN_ADDRESS_ALIAS, "Address Alias")
-        CASE_FIELDVALUE(XYM_TXN_MOSAIC_ALIAS, "Mosaic Alias")
-        CASE_FIELDVALUE(XYM_TXN_MOSAIC_DEFINITION, "Mosaic definition")
-        CASE_FIELDVALUE(XYM_TXN_MOSAIC_SUPPLY_CHANGE, "Mosaic Supply Change")
-        CASE_FIELDVALUE(XYM_TXN_MODIFY_MULTISIG_ACCOUNT, "Modify Multisig Account")
-        CASE_FIELDVALUE(XYM_TXN_ACCOUNT_KEY_LINK, "Account Key Link")
-        CASE_FIELDVALUE(XYM_TXN_NODE_KEY_LINK, "Node Key Link")
-        CASE_FIELDVALUE(XYM_TXN_VOTING_KEY_LINK, "Voting Key Link")
-        CASE_FIELDVALUE(XYM_TXN_VRF_KEY_LINK, "Vrf Key Link")
-        CASE_FIELDVALUE(XYM_TXN_AGGREGATE_COMPLETE, "Aggregate Complete")
-        CASE_FIELDVALUE(XYM_TXN_AGGREGATE_BONDED, "Aggregate Bonded")
-        CASE_FIELDVALUE(XYM_TXN_HASH_LOCK, "Hash Lock")
-        default:
-            SNPRINTF(dst, "%s", "Unknown");
+    if (field->id == XYM_UINT16_AR_RESTRICT_TYPE) {
+        if ((value & 0x0001) != 0) {
+            SNPRINTF(dst, "%s", "Address");
+        } else if ((value & 0x0002) != 0) {
+            SNPRINTF(dst, "%s", "Mosaic");
+        } else if ((value & 0x0004) != 0) {
+            SNPRINTF(dst, "%s", "Transaction Type");
+        }
+    } else if (field->id == XYM_UINT16_AR_RESTRICT_DIRECTION) {
+        if ((value & 0x4000) != 0) {
+            SNPRINTF(dst, "%s", "Outgoing");
+        } else {
+            SNPRINTF(dst, "%s", "Imcoming");
+        }
+    } else if (field->id == XYM_UINT16_AR_RESTRICT_OPERATION) {
+        if ((value & 0x8000) != 0) {
+            SNPRINTF(dst, "%s", "Block");
+        } else {
+            SNPRINTF(dst, "%s", "Allow");
+        }
+    } else {
+        switch (value) {
+            CASE_FIELDVALUE(XYM_TXN_TRANSFER, "Transfer")
+            CASE_FIELDVALUE(XYM_TXN_REGISTER_NAMESPACE, "Namespace Registration")
+            CASE_FIELDVALUE(XYM_TXN_ACCOUNT_METADATA, "Account Metadata")
+            CASE_FIELDVALUE(XYM_TXN_MOSAIC_METADATA, "Mosaic Metadata")
+            CASE_FIELDVALUE(XYM_TXN_NAMESPACE_METADATA, "Namespace Metadata")
+            CASE_FIELDVALUE(XYM_TXN_ADDRESS_ALIAS, "Address Alias")
+            CASE_FIELDVALUE(XYM_TXN_MOSAIC_ALIAS, "Mosaic Alias")
+            CASE_FIELDVALUE(XYM_TXN_ACCOUNT_ADDRESS_RESTRICTION, "Account Address Restriction")
+            CASE_FIELDVALUE(XYM_TXN_ACCOUNT_MOSAIC_RESTRICTION, "Account Mosaic Restriction")
+            CASE_FIELDVALUE(XYM_TXN_ACCOUNT_OPERATION_RESTRICTION, "Account Operation Restriction")
+            CASE_FIELDVALUE(XYM_TXN_MOSAIC_ADDRESS_RESTRICTION, "Mosaic Address Restriction")
+            CASE_FIELDVALUE(XYM_TXN_MOSAIC_GLOBAL_RESTRICTION, "Mosaic Global Restriction")
+            CASE_FIELDVALUE(XYM_TXN_MOSAIC_DEFINITION, "Mosaic definition")
+            CASE_FIELDVALUE(XYM_TXN_MOSAIC_SUPPLY_CHANGE, "Mosaic Supply Change")
+            CASE_FIELDVALUE(XYM_TXN_MODIFY_MULTISIG_ACCOUNT, "Multisig Account Modification")
+            CASE_FIELDVALUE(XYM_TXN_ACCOUNT_KEY_LINK, "Account Key Link")
+            CASE_FIELDVALUE(XYM_TXN_NODE_KEY_LINK, "Node Key Link")
+            CASE_FIELDVALUE(XYM_TXN_VOTING_KEY_LINK, "Voting Key Link")
+            CASE_FIELDVALUE(XYM_TXN_VRF_KEY_LINK, "Vrf Key Link")
+            CASE_FIELDVALUE(XYM_TXN_AGGREGATE_COMPLETE, "Aggregate Complete")
+            CASE_FIELDVALUE(XYM_TXN_AGGREGATE_BONDED, "Aggregate Bonded")
+            CASE_FIELDVALUE(XYM_TXN_FUND_LOCK, "Funds Lock")
+            CASE_FIELDVALUE(XYM_TXN_SECRET_LOCK, "Secret Lock")
+            CASE_FIELDVALUE(XYM_TXN_SECRET_PROOF, "Secret Proof")
+            default:
+                SNPRINTF(dst, "%s", "Unknown");
+        }
     }
 }
 
@@ -211,6 +255,9 @@ static field_formatter_t get_formatter(const field_t *field) {
             return int8_formatter;
         case STI_UINT8:
             return uint8_formatter;
+        case STI_UINT8_ADDITION:
+        case STI_UINT8_DELETION:
+            return uint8_custom_formatter;
         case STI_INT16:
             return int16_formatter;
         case STI_UINT16:

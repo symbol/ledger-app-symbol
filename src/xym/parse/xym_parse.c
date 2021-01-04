@@ -99,6 +99,13 @@ typedef struct {
 } ma_header_t;
 
 typedef struct {
+    uint16_t restrictionFlags;
+    uint8_t restrictionAdditionsCount;
+    uint8_t restrictionDeletionsCount;
+    uint32_t reserve;
+} ar_header_t;
+
+typedef struct {
     uint8_t linkedPublicKey[XYM_PUBLIC_KEY_LENGTH];
     uint8_t linkAction;
 } key_link_header_t;
@@ -115,7 +122,7 @@ typedef struct {
     mosaic_t mosaic;
     uint64_t blockDuration;
     uint8_t aggregateBondedHash[XYM_TRANSACTION_HASH_LENGTH];
-} hl_header_t;
+} fl_header_t;
 
 typedef struct {
     uint8_t transactionHash[XYM_TRANSACTION_HASH_LENGTH];
@@ -432,7 +439,67 @@ static int parse_mosaic_alias_txn_content(parse_context_t *context, bool isMulti
     return E_SUCCESS;
 }
 
-static int parse_key_link_txn_content(parse_context_t *context, bool isMultisig, uint8_t tx_type) {
+static int parse_account_restriction_txn_content(parse_context_t *context, bool isMultisig, uint8_t restrictionType) {
+    // get header first
+    txn_fee_t *fee = NULL;
+    if (!isMultisig) {
+        fee = (txn_fee_t*) read_data(context, sizeof(txn_fee_t)); // Read data and security check
+        BAIL_IF_ERR(fee == NULL, E_NOT_ENOUGH_DATA);
+    }
+    ar_header_t *txn = (ar_header_t*) read_data(context, sizeof(ar_header_t)); // Read data and security check
+    BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
+    // Show address/mosaicId additions count
+    BAIL_IF(add_new_field(context, restrictionType, STI_UINT8_ADDITION, sizeof(uint8_t), (const uint8_t*) &txn->restrictionAdditionsCount));
+    // Show list of addition address/mosaicId
+    for (uint8_t i = 0; i < txn->restrictionAdditionsCount; i++) {
+        switch (restrictionType) {
+            case XYM_UINT8_AA_RESTRICTION:
+                BAIL_IF(add_new_field(context, XYM_STR_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, read_data(context, XYM_ADDRESS_LENGTH))); // Read data and security check
+                break;
+            case XYM_UINT8_AM_RESTRICTION:
+                BAIL_IF(add_new_field(context, XYM_UINT64_MOSAIC_ID, STI_UINT64, sizeof(uint64_t), read_data(context, sizeof(uint64_t)))); // Read data and security check
+                break;
+            case XYM_UINT8_AO_RESTRICTION:
+                BAIL_IF(add_new_field(context, XYM_UINT16_ENTITY_RESTRICT_OPERATION, STI_UINT16, sizeof(uint16_t), read_data(context, sizeof(uint16_t)))); // Read data and security check
+                break;
+            default:
+                return E_INVALID_DATA;
+        }
+    }
+    // Show address/mosaicId deletions count
+    BAIL_IF(add_new_field(context, restrictionType, STI_UINT8_DELETION, sizeof(uint8_t), (const uint8_t*) &txn->restrictionDeletionsCount));
+    // Show list of addition address
+    for (uint8_t i = 0; i < txn->restrictionDeletionsCount; i++) {
+        switch (restrictionType) {
+            case XYM_UINT8_AA_RESTRICTION:
+                BAIL_IF(add_new_field(context, XYM_STR_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, read_data(context, XYM_ADDRESS_LENGTH))); // Read data and security check
+                break;
+            case XYM_UINT8_AM_RESTRICTION:
+                BAIL_IF(add_new_field(context, XYM_UINT64_MOSAIC_ID, STI_UINT64, sizeof(uint64_t), read_data(context, sizeof(uint64_t)))); // Read data and security check
+                break;
+            case XYM_UINT8_AO_RESTRICTION:
+                BAIL_IF(add_new_field(context, XYM_UINT16_ENTITY_RESTRICT_OPERATION, STI_UINT16, sizeof(uint16_t), read_data(context, sizeof(uint16_t)))); // Read data and security check
+                break;
+            default:
+                return E_INVALID_DATA;
+        }
+    }
+    // Show restriction operation
+    BAIL_IF(add_new_field(context, XYM_UINT16_AR_RESTRICT_OPERATION, STI_UINT16, sizeof(int16_t), (const uint8_t*) &txn->restrictionFlags));
+    if(restrictionType != XYM_UINT8_AM_RESTRICTION) {
+        // Show restriction direction
+        BAIL_IF(add_new_field(context, XYM_UINT16_AR_RESTRICT_DIRECTION, STI_UINT16, sizeof(int16_t), (const uint8_t*) &txn->restrictionFlags));
+    }
+    // Show restriction type
+    BAIL_IF(add_new_field(context, XYM_UINT16_AR_RESTRICT_TYPE, STI_UINT16, sizeof(int16_t), (const uint8_t*) &txn->restrictionFlags));
+    if (!isMultisig) {
+        // Show fee
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
+    }
+    return E_SUCCESS;
+}
+
+static int parse_key_link_txn_content(parse_context_t *context, bool isMultisig, uint8_t txType) {
     // get header first
     txn_fee_t *fee = NULL;
     if (!isMultisig) {
@@ -444,7 +511,7 @@ static int parse_key_link_txn_content(parse_context_t *context, bool isMultisig,
     // Show link action type
     BAIL_IF(add_new_field(context, XYM_UINT8_KL_TYPE, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->linkAction));
     // Show linked public key
-    BAIL_IF(add_new_field(context, tx_type, STI_PUBLIC_KEY, XYM_PUBLIC_KEY_LENGTH, (const uint8_t *) &txn->linkedPublicKey));
+    BAIL_IF(add_new_field(context, txType, STI_PUBLIC_KEY, XYM_PUBLIC_KEY_LENGTH, (const uint8_t *) &txn->linkedPublicKey));
     if (!isMultisig) {
         // Show fee
         BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
@@ -453,14 +520,14 @@ static int parse_key_link_txn_content(parse_context_t *context, bool isMultisig,
     return E_SUCCESS;
 }
 
-static int parse_hash_lock_txn_content(parse_context_t *context, bool isMultisig) {
+static int parse_fund_lock_txn_content(parse_context_t *context, bool isMultisig) {
     // get header first
     txn_fee_t *fee = NULL;
     if (!isMultisig) {
         fee = (txn_fee_t*) read_data(context, sizeof(txn_fee_t)); // Read data and security check
         BAIL_IF_ERR(fee == NULL, E_NOT_ENOUGH_DATA);
     }
-    hl_header_t *txn = (hl_header_t*) read_data(context, sizeof(hl_header_t)); // Read data and security check
+    fl_header_t *txn = (fl_header_t*) read_data(context, sizeof(fl_header_t)); // Read data and security check
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     // Show lock quantity
     BAIL_IF(add_new_field(context, XYM_MOSAIC_HL_QUANTITY, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (const uint8_t*) &txn->mosaic));
@@ -517,6 +584,15 @@ static int parse_inner_txn_content(parse_context_t *context, uint32_t len, bool 
             case XYM_TXN_MOSAIC_ALIAS:
                 BAIL_IF(parse_mosaic_alias_txn_content(context, true));
                 break;
+            case XYM_TXN_ACCOUNT_ADDRESS_RESTRICTION:
+                BAIL_IF(parse_account_restriction_txn_content(context, true, XYM_UINT8_AA_RESTRICTION));
+                break;
+            case XYM_TXN_ACCOUNT_MOSAIC_RESTRICTION:
+                BAIL_IF(parse_account_restriction_txn_content(context, true, XYM_UINT8_AM_RESTRICTION));
+                break;
+            case XYM_TXN_ACCOUNT_OPERATION_RESTRICTION:
+                BAIL_IF(parse_account_restriction_txn_content(context, true, XYM_UINT8_AO_RESTRICTION));
+                break;
             case XYM_TXN_ACCOUNT_KEY_LINK:
                 BAIL_IF(parse_key_link_txn_content(context, true, XYM_PUBLICKEY_ACCOUNT_KEY_LINK));
                 break;
@@ -526,8 +602,8 @@ static int parse_inner_txn_content(parse_context_t *context, uint32_t len, bool 
             case XYM_TXN_VRF_KEY_LINK:
                 BAIL_IF(parse_key_link_txn_content(context, true, XYM_PUBLICKEY_VRF_KEY_LINK));
                 break;
-            case XYM_TXN_HASH_LOCK:
-                BAIL_IF(parse_hash_lock_txn_content(context, true));
+            case XYM_TXN_FUND_LOCK:
+                BAIL_IF(parse_fund_lock_txn_content(context, true));
                 break;
             default:
                 return E_INVALID_DATA;
@@ -586,14 +662,23 @@ static int parse_txn_detail(parse_context_t *context, common_header_t *txn) {
         case XYM_TXN_MOSAIC_ALIAS:
             result = parse_mosaic_alias_txn_content(context, false);
             break;
+        case XYM_TXN_ACCOUNT_ADDRESS_RESTRICTION:
+            result = parse_account_restriction_txn_content(context, false, XYM_UINT8_AA_RESTRICTION);
+            break;
+        case XYM_TXN_ACCOUNT_MOSAIC_RESTRICTION:
+            result = parse_account_restriction_txn_content(context, false, XYM_UINT8_AM_RESTRICTION);
+            break;
+        case XYM_TXN_ACCOUNT_OPERATION_RESTRICTION:
+            result = parse_account_restriction_txn_content(context, false, XYM_UINT8_AO_RESTRICTION);
+            break;
         case XYM_TXN_MOSAIC_DEFINITION:
             result = parse_mosaic_definition_txn_content(context, false);
             break;
         case XYM_TXN_MOSAIC_SUPPLY_CHANGE:
             result = parse_mosaic_supply_change_txn_content(context, false);
             break;
-        case XYM_TXN_HASH_LOCK:
-            result = parse_hash_lock_txn_content(context, false);
+        case XYM_TXN_FUND_LOCK:
+            result = parse_fund_lock_txn_content(context, false);
             break;
         default:
             result = E_INVALID_DATA;
