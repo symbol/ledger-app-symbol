@@ -196,13 +196,16 @@ static int parse_transfer_txn_content(parse_context_t *context, bool isMultisig)
     // Show Recipient address
     BAIL_IF(add_new_field(context, XYM_STR_RECIPIENT_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) txn->recipientAddress));
     // Show sent mosaic count field
-    BAIL_IF(add_new_field(context, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->mosaicsCount));
+    if (txn->mosaicsCount > 1) {
+        BAIL_IF(add_new_field(context, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->mosaicsCount));
+    }
     // Show mosaics amount
     for (uint8_t i = 0; i < txn->mosaicsCount; i++) {
         mosaic_t *mosaic = (mosaic_t*) read_data(context, sizeof(mosaic_t));
         BAIL_IF_ERR(mosaic == NULL, E_NOT_ENOUGH_DATA);
-        if (txn->mosaicsCount == 1 && mosaic->mosaicId == XYM_TESTNET_MOSAIC_ID) {
-            context->result.numFields--;
+        if (txn->mosaicsCount == 1 && mosaic->mosaicId != XYM_TESTNET_MOSAIC_ID) {
+            // Show sent mosaic count field (only 1 unknown mosaic)
+            BAIL_IF(add_new_field(context, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->mosaicsCount));
         }
         if (mosaic->mosaicId != XYM_TESTNET_MOSAIC_ID) {
             // Unknow mosaic notification
