@@ -19,7 +19,7 @@
 #define LEDGER_APP_XYM_PRINTERS_H
 
 #include <stdint.h>
-#include "xym_parse.h"
+#include "parse/xym_parse.h"
 
 enum _parser_error {
     E_SUCCESS = 0,

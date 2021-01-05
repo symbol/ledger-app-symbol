@@ -67,8 +67,7 @@ void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *
     // strip trailing .
     if (out[j-1] == '.') j -= 1;
 
-    if (asset) {
-        // qualify amount
+    if (asset && strlen(asset)>0) {
         out[j++] = ' ';
         strcpy(out + j, asset);
         out[j+strlen(asset)] = '\0';
