@@ -21,6 +21,7 @@
 #include "xym/xym_helpers.h"
 #include "ui/main/idle_menu.h"
 #include "transaction/transaction.h"
+#include "printers.h"
 
 #define PREFIX_LENGTH   4
 
@@ -176,11 +177,19 @@ void handle_packet_content(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
 
         // Try to parse the transaction. If the parsing fails, throw an exception
         // to cause the processing to abort and the transaction context to be reset.
-        // if (parse_txn_context(&parseContext)) {
-        //     // Mask real cause behind generic error (INCORRECT_DATA)
-        //     THROW(0x6a80);
-        // }
-        parse_txn_context(&parseContext);
+        switch (parse_txn_context(&parseContext)) {
+            case E_TOO_MANY_FIELDS:
+                // Abort if there are too many fields to show on Ledger device
+                THROW(0x6700);
+                break;
+            case E_NOT_ENOUGH_DATA:
+            case E_INVALID_DATA:
+                // Mask real cause behind generic error (INCORRECT_DATA)
+                THROW(0x6a80);
+                break;
+            default:
+                break;
+        }
 
         review_transaction(&parseContext.result, sign_transaction, reject_transaction);
 
