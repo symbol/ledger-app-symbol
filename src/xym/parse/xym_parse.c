@@ -519,7 +519,6 @@ static int parse_key_link_txn_content(parse_context_t *context, bool isMultisig,
         // Show fee
         BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
     }
-    BAIL_IF_ERR(move_pos(context, 7) == NULL, E_NOT_ENOUGH_DATA);  // Filling zeros
     return E_SUCCESS;
 }
 
@@ -549,7 +548,6 @@ static int parse_inner_txn_content(parse_context_t *context, uint32_t len, bool 
     uint32_t totalSize = 0;
     do {
         // get header first
-        uint32_t prevOffset = context->offset;
         inner_tx_header_t *txn = (inner_tx_header_t*) read_data(context, sizeof(inner_tx_header_t)); // Read data and security check
         BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
         totalSize += txn->size;
@@ -561,7 +559,6 @@ static int parse_inner_txn_content(parse_context_t *context, uint32_t len, bool 
                 break;
             case XYM_TXN_MOSAIC_DEFINITION:
                 BAIL_IF(parse_mosaic_definition_txn_content(context, true));
-                BAIL_IF_ERR(move_pos(context, 2) == NULL, E_NOT_ENOUGH_DATA);  // Filling zeros
                 break;
             case XYM_TXN_MOSAIC_SUPPLY_CHANGE:
                 BAIL_IF(parse_mosaic_supply_change_txn_content(context, true));
@@ -611,12 +608,8 @@ static int parse_inner_txn_content(parse_context_t *context, uint32_t len, bool 
             default:
                 return E_INVALID_DATA;
         }
-        uint32_t processedDataLength = context->offset - prevOffset;
-        if (txn->size > processedDataLength) {
-            BAIL_IF_ERR(move_pos(context, txn->size - processedDataLength) == NULL, E_NOT_ENOUGH_DATA);  // Move position and security check
-        } else {
-            totalSize = totalSize + (processedDataLength - txn->size);
-        }
+        // Filling zeros
+        BAIL_IF_ERR(move_pos(context, txn->size % ALIGNMENT_BYTES == 0 ? 0 : ALIGNMENT_BYTES - (txn->size % ALIGNMENT_BYTES)) == NULL, E_INVALID_DATA);  // Move position and security check
     } while (totalSize < len - sizeof(inner_tx_header_t));
     return E_SUCCESS;
 }

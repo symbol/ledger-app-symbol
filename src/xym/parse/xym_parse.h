@@ -22,6 +22,7 @@
 #include "xym/xym_helpers.h"
 
 #define XYM_PERSISTENT_DELEGATED_HARVESTING 0xFE
+#define ALIGNMENT_BYTES 8
 
 #pragma pack(push, 1)
 typedef struct {
