@@ -5,3 +5,4 @@ obj
 .vscode
 src/glyphs.c
 src/glyphs.h
+tests/build/*

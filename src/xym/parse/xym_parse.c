@@ -667,6 +667,15 @@ static int parse_txn_detail(parse_context_t *context, common_header_t *txn) {
         case XYM_TXN_ACCOUNT_OPERATION_RESTRICTION:
             result = parse_account_restriction_txn_content(context, false, XYM_UINT8_AO_RESTRICTION);
             break;
+        case XYM_TXN_ACCOUNT_KEY_LINK:
+            result = parse_key_link_txn_content(context, false, XYM_PUBLICKEY_ACCOUNT_KEY_LINK);
+            break;
+        case XYM_TXN_NODE_KEY_LINK:
+            result = parse_key_link_txn_content(context, false, XYM_PUBLICKEY_NODE_KEY_LINK);
+            break;
+        case XYM_TXN_VRF_KEY_LINK:
+            result = parse_key_link_txn_content(context, false, XYM_PUBLICKEY_VRF_KEY_LINK);
+            break;
         case XYM_TXN_MOSAIC_DEFINITION:
             result = parse_mosaic_definition_txn_content(context, false);
             break;
