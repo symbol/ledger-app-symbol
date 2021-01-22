@@ -21,7 +21,7 @@ endif
 include $(BOLOS_SDK)/Makefile.defines
 
 #  43	0x8000002b	XYM	SYMBOL
-APPNAME = 'Symbol (XYM)'
+APPNAME = 'Symbol'
 APP_LOAD_PARAMS=--appFlags 0x40 --path "44'/4343'" --curve secp256k1 --curve ed25519 $(COMMON_LOAD_PARAMS)
 
 APPVERSION_M=0
