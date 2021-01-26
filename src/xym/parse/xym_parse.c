@@ -667,6 +667,15 @@ static int parse_txn_detail(parse_context_t *context, common_header_t *txn) {
         case XYM_TXN_ACCOUNT_OPERATION_RESTRICTION:
             result = parse_account_restriction_txn_content(context, false, XYM_UINT8_AO_RESTRICTION);
             break;
+        case XYM_TXN_ACCOUNT_KEY_LINK:
+            result = parse_key_link_txn_content(context, false, XYM_PUBLICKEY_ACCOUNT_KEY_LINK);
+            break;
+        case XYM_TXN_NODE_KEY_LINK:
+            result = parse_key_link_txn_content(context, false, XYM_PUBLICKEY_NODE_KEY_LINK);
+            break;
+        case XYM_TXN_VRF_KEY_LINK:
+            result = parse_key_link_txn_content(context, false, XYM_PUBLICKEY_VRF_KEY_LINK);
+            break;
         case XYM_TXN_MOSAIC_DEFINITION:
             result = parse_mosaic_definition_txn_content(context, false);
             break;
@@ -685,10 +694,10 @@ static int parse_txn_detail(parse_context_t *context, common_header_t *txn) {
 
 static void set_sign_data_length(parse_context_t *context) {
     if ((context->transactionType == XYM_TXN_AGGREGATE_COMPLETE) || (context->transactionType == XYM_TXN_AGGREGATE_BONDED)) {
-        const unsigned char TESTNET_GENERATION_HASH[] = {0x6C, 0x1B, 0x92, 0x39, 0x1C, 0xCB, 0x41, 0xC9,
-                                                        0x64, 0x78, 0x47, 0x1C, 0x26, 0x34, 0xC1, 0x11,
-                                                        0xD9, 0xE9, 0x89, 0xDE, 0xCD, 0x66, 0x13, 0x0C,
-                                                        0x04, 0x30, 0xB5, 0xB8, 0xD2, 0x01, 0x17, 0xCD};
+        const unsigned char TESTNET_GENERATION_HASH[] = {0x45, 0xFB, 0xCF, 0x2F, 0x0E, 0xA3, 0x6E, 0xFA,
+                                                        0x79, 0x23, 0xC9, 0xBC, 0x92, 0x3D, 0x65, 0x03,
+                                                        0x16, 0x96, 0x51, 0xF7, 0xFA, 0x4E, 0xFC, 0x46,
+                                                        0xA8, 0xEA, 0xF5, 0xAE, 0x09, 0x05, 0x7E, 0xBD};
 
         if (memcmp(TESTNET_GENERATION_HASH, context->data, XYM_TRANSACTION_HASH_LENGTH) == 0) {
             // Sign data from generation hash to transaction hash
