@@ -61,7 +61,7 @@ void handle_public_key(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
     cx_ecfp_private_key_t privateKey;
     cx_ecfp_public_key_t publicKey;
     uint8_t algo;
-    cx_curve_t curve;
+    uint8_t curve;
     char address[XYM_PRETTY_ADDRESS_LENGTH+1];
     uint8_t p2Chain = p2 & 0x3F;
     UNUSED(p2Chain);
@@ -81,7 +81,7 @@ void handle_public_key(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
     if (((p2 & P2_SECP256K1) != 0) && ((p2 & P2_ED25519) != 0)) {
         THROW(0x6B00);
     }
-    curve = (((p2 & P2_ED25519) != 0) ? CX_CURVE_Ed25519 : CX_CURVE_256K1);
+    curve = (((p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
 
     //Read and convert path's data
     for (i = 0; i < bip32PathLength; i++) {
@@ -99,10 +99,14 @@ void handle_public_key(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
             // Removed SignSchema so NetworkType is no longer bonded to the schema anymore (sha3 / keccak).
             // This change will affect all existing keypairs / address (derived from public key) and transaction signatures.
             algo = CX_SHA512;
-            os_perso_derive_node_bip32(CX_CURVE_256K1, bip32Path, bip32PathLength, privateKeyData, NULL);
-            cx_ecfp_init_private_key(curve, privateKeyData, XYM_PRIVATE_KEY_LENGTH, &privateKey);
+            if (curve == CURVE_Ed25519) {
+                os_perso_derive_node_bip32_seed_key(HDW_ED25519_SLIP10, CX_CURVE_Ed25519, bip32Path, bip32PathLength, privateKeyData, NULL, (unsigned char*) "ed25519 seed", 12);
+            } else {
+                os_perso_derive_node_bip32(CX_CURVE_256K1, bip32Path, bip32PathLength, privateKeyData, NULL);
+            }
+            cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, XYM_PRIVATE_KEY_LENGTH, &privateKey);
             io_seproxyhal_io_heartbeat();
-            cx_ecfp_generate_pair2(curve,
+            cx_ecfp_generate_pair2(CX_CURVE_Ed25519,
                                     &publicKey,
                                     &privateKey,
                                     1,
