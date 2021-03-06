@@ -38,4 +38,7 @@
 #define OFFSET_LC 4
 #define OFFSET_CDATA 5
 
+#define CURVE_Ed25519 1
+#define CURVE_256K1   2
+
 #endif //LEDGER_APP_XYM_CONSTANTS_H

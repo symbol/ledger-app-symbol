@@ -47,10 +47,16 @@ void sign_transaction() {
     BEGIN_TRY {
         TRY {
             io_seproxyhal_io_heartbeat();
-            os_perso_derive_node_bip32(
-                    CX_CURVE_256K1, transactionContext.bip32Path,
-                    transactionContext.pathLength, privateKeyData, NULL);
-            cx_ecfp_init_private_key(transactionContext.curve, privateKeyData, XYM_PRIVATE_KEY_LENGTH, &privateKey);
+            if (transactionContext.curve == CURVE_Ed25519) {
+                os_perso_derive_node_bip32_seed_key(
+                        HDW_ED25519_SLIP10, CX_CURVE_Ed25519, transactionContext.bip32Path,
+                        transactionContext.pathLength, privateKeyData, NULL, (unsigned char*) "ed25519 seed", 12);
+            } else {
+                os_perso_derive_node_bip32(
+                        CX_CURVE_256K1, transactionContext.bip32Path,
+                        transactionContext.pathLength, privateKeyData, NULL);
+            }
+            cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, XYM_PRIVATE_KEY_LENGTH, &privateKey);
             explicit_bzero(privateKeyData, sizeof(privateKeyData));
             io_seproxyhal_io_heartbeat();
             tx = (uint32_t) cx_eddsa_sign(&privateKey, CX_LAST, CX_SHA512, transactionContext.rawTx,
@@ -139,7 +145,7 @@ void handle_first_packet(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
     if (((p2 & P2_SECP256K1) != 0) && ((p2 & P2_ED25519) != 0)) {
         THROW(0x6B00);
     }
-    transactionContext.curve = (((p2 & P2_ED25519) != 0) ? CX_CURVE_Ed25519 : CX_CURVE_256K1);
+    transactionContext.curve = (((p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
     handle_packet_content(p1, p2, workBuffer, dataLength, flags);
 }
 
