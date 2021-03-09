@@ -39,9 +39,7 @@ typedef struct {
     uint32_t bip32Path[MAX_BIP32_PATH];
     uint8_t rawTx[MAX_RAW_TX];
     uint32_t rawTxLength;
-#ifndef FUZZ
-    cx_curve_t curve;
-#endif
+    uint8_t curve;
 } transaction_context_t;
 
 extern transaction_context_t transactionContext;
