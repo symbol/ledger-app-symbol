@@ -203,11 +203,12 @@ static int parse_transfer_txn_content(parse_context_t *context, bool isMultisig)
     for (uint8_t i = 0; i < txn->mosaicsCount; i++) {
         mosaic_t *mosaic = (mosaic_t*) read_data(context, sizeof(mosaic_t));
         BAIL_IF_ERR(mosaic == NULL, E_NOT_ENOUGH_DATA);
-        if (txn->mosaicsCount == 1 && mosaic->mosaicId != XYM_TESTNET_MOSAIC_ID) {
+        bool is_using_mainnet = (transactionContext.bip32Path[1] & 0x7FFFFFFF) == 4343 ? true : false;
+        if (txn->mosaicsCount == 1 && mosaic->mosaicId != (is_using_mainnet ? XYM_MAINNET_MOSAIC_ID : XYM_TESTNET_MOSAIC_ID)) {
             // Show sent mosaic count field (only 1 unknown mosaic)
             BAIL_IF(add_new_field(context, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->mosaicsCount));
         }
-        if (mosaic->mosaicId != XYM_TESTNET_MOSAIC_ID) {
+        if (mosaic->mosaicId != (is_using_mainnet ? XYM_MAINNET_MOSAIC_ID : XYM_TESTNET_MOSAIC_ID)) {
             // Unknow mosaic notification
             BAIL_IF(add_new_field(context, XYM_UNKNOWN_MOSAIC, STI_STR, 0, (const uint8_t*) mosaic));
         }
@@ -699,7 +700,13 @@ static void set_sign_data_length(parse_context_t *context) {
                                                         0x16, 0x96, 0x51, 0xF7, 0xFA, 0x4E, 0xFC, 0x46,
                                                         0xA8, 0xEA, 0xF5, 0xAE, 0x09, 0x05, 0x7E, 0xBD};
 
-        if (memcmp(TESTNET_GENERATION_HASH, context->data, XYM_TRANSACTION_HASH_LENGTH) == 0) {
+        const unsigned char MAINNET_GENERATION_HASH[] = {0x57, 0xF7, 0xDA, 0x20, 0x50, 0x08, 0x02, 0x6C,
+                                                        0x77, 0x6C, 0xB6, 0xAE, 0xD8, 0x43, 0x39, 0x3F,
+                                                        0x04, 0xCD, 0x45, 0x8E, 0x0A, 0xA2, 0xD9, 0xF1,
+                                                        0xD5, 0xF3, 0x1A, 0x40, 0x20, 0x72, 0xB2, 0xD6};
+
+        bool is_using_mainnet = (transactionContext.bip32Path[1] & 0x7FFFFFFF) == 4343 ? true : false;
+        if (memcmp(is_using_mainnet ? MAINNET_GENERATION_HASH : TESTNET_GENERATION_HASH, context->data, XYM_TRANSACTION_HASH_LENGTH) == 0) {
             // Sign data from generation hash to transaction hash
             // XYM_AGGREGATE_SIGNING_LENGTH = XYM_TRANSACTION_HASH_LENGTH
             //                                + sizeof(common_header_t) + sizeof(txn_fee_t) = 84
