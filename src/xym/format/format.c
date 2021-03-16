@@ -21,7 +21,7 @@
 #include "fields.h"
 #include "readers.h"
 #include "printers.h"
-#include "global.h"
+#include "apdu/global.h"
 #include "xym/xym_helpers.h"
 #include "common.h"
 #include "base32.h"
