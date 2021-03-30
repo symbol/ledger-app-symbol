@@ -25,6 +25,7 @@ int16_t read_int16(const uint8_t *src);
 
 uint8_t read_uint8(const uint8_t *src);
 uint16_t read_uint16(const uint8_t *src);
+uint16_t read_uint32(const uint8_t *src);
 uint64_t read_uint64(const uint8_t *src);
 
 #endif //LEDGER_APP_XYM_READERS_H
