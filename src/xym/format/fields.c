@@ -61,6 +61,13 @@ void resolve_fieldname(const field_t *field, char* dst) {
         }
     }
 
+    if (field->dataType == STI_UINT32) {
+        switch (field->id) {
+            CASE_FIELDNAME(XYM_UINT32_VKL_START_POINT, "Start point")
+            CASE_FIELDNAME(XYM_UINT32_VKL_END_POINT, "End point")
+        }
+    }
+
     if (field->dataType == STI_UINT64) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_UINT64_DURATION, "Duration")
@@ -83,7 +90,7 @@ void resolve_fieldname(const field_t *field, char* dst) {
         switch (field->id) {
             CASE_FIELDNAME(XYM_PUBLICKEY_ACCOUNT_KEY_LINK, "Linked Acct. PbK")
             CASE_FIELDNAME(XYM_PUBLICKEY_NODE_KEY_LINK, "Linked Node PbK")
-            CASE_FIELDNAME(XYM_PUBLICKEY_VOTING_KEY_LINK, "LinkedVotingPbK")
+            CASE_FIELDNAME(XYM_PUBLICKEY_VOTING_KEY_LINK, "Linked Vot. PbK")
             CASE_FIELDNAME(XYM_PUBLICKEY_VRF_KEY_LINK, "Linked Vrf PbK")
         }
     }
