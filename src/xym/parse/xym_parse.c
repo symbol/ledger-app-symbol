@@ -111,6 +111,13 @@ typedef struct {
 } key_link_header_t;
 
 typedef struct {
+    uint8_t linkedPublicKey[XYM_PUBLIC_KEY_LENGTH];
+    uint32_t startPoint;
+    uint32_t endPoint;
+    uint8_t linkAction;
+} voting_key_link_header_t;
+
+typedef struct {
     int8_t minRemovalDelta;
     int8_t minApprovalDelta;
     uint8_t addressAdditionsCount;
@@ -523,6 +530,30 @@ static int parse_key_link_txn_content(parse_context_t *context, bool isMultisig,
     return E_SUCCESS;
 }
 
+static int parse_voting_key_link_txn_content(parse_context_t *context, bool isMultisig) {
+    // get header first
+    txn_fee_t *fee = NULL;
+    if (!isMultisig) {
+        fee = (txn_fee_t*) read_data(context, sizeof(txn_fee_t)); // Read data and security check
+        BAIL_IF_ERR(fee == NULL, E_NOT_ENOUGH_DATA);
+    }
+    voting_key_link_header_t *txn = (voting_key_link_header_t*) read_data(context, sizeof(voting_key_link_header_t)); // Read data and security check
+    BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
+    // Show link action type
+    BAIL_IF(add_new_field(context, XYM_UINT8_KL_TYPE, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->linkAction));
+    // Show start point
+    BAIL_IF(add_new_field(context, XYM_UINT32_VKL_START_POINT, STI_UINT32, sizeof(uint32_t), (const uint8_t*) &txn->startPoint));
+    // Show stop point
+    BAIL_IF(add_new_field(context, XYM_UINT32_VKL_END_POINT, STI_UINT32, sizeof(uint32_t), (const uint8_t*) &txn->endPoint));
+    // Show linked public key
+    BAIL_IF(add_new_field(context, XYM_PUBLICKEY_VOTING_KEY_LINK, STI_PUBLIC_KEY, XYM_PUBLIC_KEY_LENGTH, (const uint8_t *) &txn->linkedPublicKey));
+    if (!isMultisig) {
+        // Show fee
+        BAIL_IF(add_new_field(context, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee));
+    }
+    return E_SUCCESS;
+}
+
 static int parse_fund_lock_txn_content(parse_context_t *context, bool isMultisig) {
     // get header first
     txn_fee_t *fee = NULL;
@@ -600,6 +631,9 @@ static int parse_inner_txn_content(parse_context_t *context, uint32_t len, bool 
             case XYM_TXN_NODE_KEY_LINK:
                 BAIL_IF(parse_key_link_txn_content(context, true, XYM_PUBLICKEY_NODE_KEY_LINK));
                 break;
+            case XYM_TXN_VOTING_KEY_LINK:
+                BAIL_IF(parse_voting_key_link_txn_content(context, true));
+                break;
             case XYM_TXN_VRF_KEY_LINK:
                 BAIL_IF(parse_key_link_txn_content(context, true, XYM_PUBLICKEY_VRF_KEY_LINK));
                 break;
@@ -673,6 +707,9 @@ static int parse_txn_detail(parse_context_t *context, common_header_t *txn) {
             break;
         case XYM_TXN_NODE_KEY_LINK:
             result = parse_key_link_txn_content(context, false, XYM_PUBLICKEY_NODE_KEY_LINK);
+            break;
+        case XYM_TXN_VOTING_KEY_LINK:
+            result = parse_voting_key_link_txn_content(context, false);
             break;
         case XYM_TXN_VRF_KEY_LINK:
             result = parse_key_link_txn_content(context, false, XYM_PUBLICKEY_VRF_KEY_LINK);

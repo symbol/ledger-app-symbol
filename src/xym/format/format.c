@@ -178,6 +178,13 @@ static void uint16_formatter(const field_t *field, char *dst) {
     }
 }
 
+static void uint32_formatter(const field_t *field, char *dst) {
+    uint32_t value = read_uint32(field->data);
+    if ((field->id == XYM_UINT32_VKL_START_POINT) || (field->id == XYM_UINT32_VKL_END_POINT)) {
+        SNPRINTF(dst, "%d", value);
+    }
+}
+
 static void hash_formatter(const field_t *field, char *dst) {
     snprintf_hex(dst, MAX_FIELD_LEN, field->data, field->length, 0);
 }
@@ -264,6 +271,8 @@ static field_formatter_t get_formatter(const field_t *field) {
             return int16_formatter;
         case STI_UINT16:
             return uint16_formatter;
+        case STI_UINT32:
+            return uint32_formatter;
         case STI_UINT64:
             return uint64_formatter;
         case STI_HASH256:

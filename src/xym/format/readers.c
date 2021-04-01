@@ -34,6 +34,10 @@ uint16_t read_uint16(const uint8_t *src) {
     return (uint16_t) *((uint16_t *)src);
 }
 
+uint16_t read_uint32(const uint8_t *src) {
+    return (uint32_t) *((uint32_t *)src);
+}
+
 uint64_t read_uint64(const uint8_t *src) {
     return (uint64_t) *((uint32_t *)src);
 }
