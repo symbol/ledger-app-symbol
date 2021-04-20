@@ -200,8 +200,15 @@ static int parse_transfer_txn_content(parse_context_t *context, bool isMultisig)
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     uint32_t length = txn->mosaicsCount * sizeof(mosaic_t) + txn->messageSize;
     BAIL_IF_ERR(!has_data(context, length), E_INVALID_DATA);
-    // Show Recipient address
-    BAIL_IF(add_new_field(context, XYM_STR_RECIPIENT_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) txn->recipientAddress));
+    if (txn->recipientAddress[0] == MAINNET_NETWORK_TYPE || txn->recipientAddress[0] == TESTNET_NETWORK_TYPE) {
+        // Show Recipient address
+        BAIL_IF(add_new_field(context, XYM_STR_RECIPIENT_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) txn->recipientAddress));
+    } else {
+        // Recipient alias to namespace notification
+        BAIL_IF(add_new_field(context, XYM_STR_RECIPIENT_ADDRESS, STI_STR, 0, (const uint8_t*) &txn->recipientAddress));
+        // Show alias namespace ID
+        BAIL_IF(add_new_field(context, XYM_UINT64_NS_ID, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->recipientAddress[1]));
+    }
     // Show sent mosaic count field
     if (txn->mosaicsCount > 1) {
         BAIL_IF(add_new_field(context, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->mosaicsCount));
