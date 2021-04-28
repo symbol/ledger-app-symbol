@@ -200,8 +200,15 @@ static int parse_transfer_txn_content(parse_context_t *context, bool isMultisig)
     BAIL_IF_ERR(txn == NULL, E_NOT_ENOUGH_DATA);
     uint32_t length = txn->mosaicsCount * sizeof(mosaic_t) + txn->messageSize;
     BAIL_IF_ERR(!has_data(context, length), E_INVALID_DATA);
-    // Show Recipient address
-    BAIL_IF(add_new_field(context, XYM_STR_RECIPIENT_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) txn->recipientAddress));
+    if (txn->recipientAddress[0] == MAINNET_NETWORK_TYPE || txn->recipientAddress[0] == TESTNET_NETWORK_TYPE) {
+        // Show Recipient address
+        BAIL_IF(add_new_field(context, XYM_STR_RECIPIENT_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) txn->recipientAddress));
+    } else {
+        // Recipient alias to namespace notification
+        BAIL_IF(add_new_field(context, XYM_STR_RECIPIENT_ADDRESS, STI_STR, 0, (const uint8_t*) &txn->recipientAddress));
+        // Show alias namespace ID
+        BAIL_IF(add_new_field(context, XYM_UINT64_NS_ID, STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->recipientAddress[1]));
+    }
     // Show sent mosaic count field
     if (txn->mosaicsCount > 1) {
         BAIL_IF(add_new_field(context, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->mosaicsCount));
@@ -732,10 +739,10 @@ static int parse_txn_detail(parse_context_t *context, common_header_t *txn) {
 
 static void set_sign_data_length(parse_context_t *context) {
     if ((context->transactionType == XYM_TXN_AGGREGATE_COMPLETE) || (context->transactionType == XYM_TXN_AGGREGATE_BONDED)) {
-        const unsigned char TESTNET_GENERATION_HASH[] = {0x45, 0xFB, 0xCF, 0x2F, 0x0E, 0xA3, 0x6E, 0xFA,
-                                                        0x79, 0x23, 0xC9, 0xBC, 0x92, 0x3D, 0x65, 0x03,
-                                                        0x16, 0x96, 0x51, 0xF7, 0xFA, 0x4E, 0xFC, 0x46,
-                                                        0xA8, 0xEA, 0xF5, 0xAE, 0x09, 0x05, 0x7E, 0xBD};
+        const unsigned char TESTNET_GENERATION_HASH[] = {0x3B, 0x5E, 0x1F, 0xA6, 0x44, 0x56, 0x53, 0xC9,
+                                                        0x71, 0xA5, 0x06, 0x87, 0xE7, 0x5E, 0x6D, 0x09,
+                                                        0xFB, 0x30, 0x48, 0x10, 0x55, 0xE3, 0x99, 0x0C,
+                                                        0x84, 0xB2, 0x5E, 0x92, 0x22, 0xDC, 0x11, 0x55};
 
         const unsigned char MAINNET_GENERATION_HASH[] = {0x57, 0xF7, 0xDA, 0x20, 0x50, 0x08, 0x02, 0x6C,
                                                         0x77, 0x6C, 0xB6, 0xAE, 0xD8, 0x43, 0x39, 0x3F,

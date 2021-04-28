@@ -251,6 +251,8 @@ static void msg_formatter(const field_t *field, char *dst) {
 static void string_formatter(const field_t *field, char *dst) {
     if (field->id == XYM_UNKNOWN_MOSAIC) {
         SNPRINTF(dst, "%s", "Divisibility and levy cannot be shown");
+    } else if (field->id == XYM_STR_RECIPIENT_ADDRESS) {
+        SNPRINTF(dst, "%s", "alias to a namespace");
     } else if (field->length > MAX_FIELD_LEN) {
         snprintf_ascii(dst, MAX_FIELD_LEN, field->data, MAX_FIELD_LEN - 1);
     } else {
