@@ -20,122 +20,175 @@
 #include "xym/xym_helpers.h"
 #include "ui/main/idle_menu.h"
 #include "ui/address/address_ui.h"
+#include "types.h"
+#include "io.h"
 
-uint8_t xymPublicKey[XYM_PUBLIC_KEY_LENGTH];
 
-uint32_t set_result_get_publicKey() {
-    uint32_t tx = 0;
-    //publicKey
-    G_io_apdu_buffer[tx++] = XYM_PUBLIC_KEY_LENGTH;
-    memcpy(G_io_apdu_buffer + tx, xymPublicKey, XYM_PUBLIC_KEY_LENGTH);
-    tx += 32;
-    return tx;
+static struct 
+{
+    size_t  keyLength;
+    uint8_t key[ XYM_PUBLIC_KEY_LENGTH ];    
+} G_xym_public_key;
+
+
+int send_public_key() //TODO: Rename to send_public_key
+{
+    G_xym_public_key.keyLength = XYM_PUBLIC_KEY_LENGTH;    
+    buffer_t buffer = { (uint8_t*) &G_xym_public_key, sizeof(G_xym_public_key), 0 };
+    int      size   = io_send_response( &buffer, OK );
+
+    return size;
 }
 
-void on_address_confirmed() {
-    uint32_t tx = set_result_get_publicKey();
-    G_io_apdu_buffer[tx++] = 0x90;
-    G_io_apdu_buffer[tx++] = 0x00;
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
-    // Display back the original UX
+void on_address_confirmed() 
+{
+    send_public_key();
     display_idle_menu();
 }
 
-void on_address_rejected() {
-    G_io_apdu_buffer[0] = 0x69;
-    G_io_apdu_buffer[1] = 0x85;
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-    // Display back the original UX
+void on_address_rejected() 
+{
+    io_send_error(ADDRESS_REJECTED);
     display_idle_menu();
 }
 
-void handle_public_key(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
-                        uint16_t dataLength, volatile unsigned int *flags,
-                        volatile unsigned int *tx) {
-    uint8_t privateKeyData[XYM_PRIVATE_KEY_LENGTH];
-    uint32_t bip32Path[MAX_BIP32_PATH];
-    uint32_t i;
-    uint8_t bip32PathLength = *(dataBuffer++);
+
+typedef struct 
+{
+    bool        confirmTransaction;
+    uint8_t     bip32PathLength;
+    uint32_t    bip32Path[ MAX_BIP32_PATH ];
+    uint8_t     networkType;
+    CurveType_t curveType;
+} KeyData_t;
+
+
+
+bool extract_parameters( const uint8_t p1, const uint8_t p2, const uint8_t* data, const uint8_t dataLength, KeyData_t* keyData )
+{
+    // check length of data is correct
+    if( dataLength != XYM_PKG_GETPUBLICKEY_LENGTH )
+    {
+        handle_error( INVALID_PKG_KEY_LENGTH );
+        return false;
+    }
+
+    // check bip32 path lenght is correct
+    uint8_t bip32PathLength = data[0];
+    if( (bip32PathLength < 1) || (bip32PathLength > MAX_BIP32_PATH) )
+    {
+        handle_error( INVALID_BIP32_PATH_LENGTH ); //TODO: This and the above error had the same error code (0x6a80), was that intentional? I changed this one to 0x6a81
+        return false;
+    }
+
+    // check that p1 is set to either to confirm or not to confirm transaction by user
+    if( (p1 != P1_CONFIRM) && (p1 != P1_NON_CONFIRM) )
+    {
+        handle_error( INVALID_P1_OR_P2 );
+        return false;
+    }
+
+    // check that p2 is set to either SECP256K1 or ED25519
+    if( ( ((p2 & P2_SECP256K1) == 0) && ((p2 & P2_ED25519) == 0) ) ||
+        ( ((p2 & P2_SECP256K1) != 0) && ((p2 & P2_ED25519) != 0) )    )
+    {
+        handle_error( INVALID_P1_OR_P2 );
+        return false;
+    }
+
+    // convert data to bip32 paths
+    size_t dataIdx = 1;
+    for( size_t pathIdx = 0; pathIdx < bip32PathLength; pathIdx++, dataIdx += 4 )  // TODO: if bip32PathLength > 5 will this not cause a buffer overflow of data[] which is a size of 22 ??
+    {
+        // change endianness
+        keyData->bip32Path[pathIdx] = (data[dataIdx+0] << 24) | (data[ dataIdx+1 ] << 16) |
+                                      (data[dataIdx+2] <<  8) | (data[ dataIdx+3 ] <<  0);
+    }
+
+    // prepare output
+    keyData->confirmTransaction = (p1 == P1_CONFIRM);
+    keyData->bip32PathLength    = bip32PathLength;
+    keyData->networkType        = data[dataIdx];                                                  //TODO: no check is done on networkType. Are all values valid?
+    keyData->curveType          = (((p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
+
+    return true;
+}
+
+
+void get_public_key( KeyData_t* keyData, uint8_t key[ XYM_PUBLIC_KEY_LENGTH ], char address[ XYM_PRETTY_ADDRESS_LENGTH+1 ] )
+{
     cx_ecfp_private_key_t privateKey;
-    cx_ecfp_public_key_t publicKey;
-    uint8_t algo;
-    uint8_t curve;
-    char address[XYM_PRETTY_ADDRESS_LENGTH+1];
-    uint8_t p2Chain = p2 & 0x3F;
-    UNUSED(p2Chain);
-
-    if (dataLength != XYM_PKG_GETPUBLICKEY_LENGTH) {
-        THROW(0x6a80);
-    }
-    if ((bip32PathLength < 0x01) || (bip32PathLength > MAX_BIP32_PATH)) {
-        THROW(0x6a80);
-    }
-    if ((p1 != P1_CONFIRM) && (p1 != P1_NON_CONFIRM)) {
-        THROW(0x6B00);
-    }
-    if (((p2 & P2_SECP256K1) == 0) && ((p2 & P2_ED25519) == 0)) {
-        THROW(0x6B00);
-    }
-    if (((p2 & P2_SECP256K1) != 0) && ((p2 & P2_ED25519) != 0)) {
-        THROW(0x6B00);
-    }
-    curve = (((p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
-
-    //Read and convert path's data
-    for (i = 0; i < bip32PathLength; i++) {
-        bip32Path[i] = (dataBuffer[0] << 24) | (dataBuffer[1] << 16) |
-                       (dataBuffer[2] << 8) | (dataBuffer[3]);
-        dataBuffer += 4;
-    }
-    uint8_t network_type = *dataBuffer;
+    uint8_t               privateKeyData[ XYM_PRIVATE_KEY_LENGTH ];
 
     io_seproxyhal_io_heartbeat();
 
     BEGIN_TRY {
-        TRY {
-            // Changed hashing algorithm to cope with catapult-server changes. All Key derivation and signing are now using SHA512.
-            // Removed SignSchema so NetworkType is no longer bonded to the schema anymore (sha3 / keccak).
-            // This change will affect all existing keypairs / address (derived from public key) and transaction signatures.
-            algo = CX_SHA512;
-            if (curve == CURVE_Ed25519) {
-                os_perso_derive_node_bip32_seed_key(HDW_ED25519_SLIP10, CX_CURVE_Ed25519, bip32Path, bip32PathLength, privateKeyData, NULL, (unsigned char*) "ed25519 seed", 12);
-            } else {
-                os_perso_derive_node_bip32(CX_CURVE_256K1, bip32Path, bip32PathLength, privateKeyData, NULL);
+        TRY 
+        {            
+            if( keyData->curveType == CURVE_Ed25519 )
+            {
+                os_perso_derive_node_bip32_seed_key( HDW_ED25519_SLIP10, CX_CURVE_Ed25519, keyData->bip32Path, keyData->bip32PathLength, privateKeyData, NULL, (unsigned char*) "ed25519 seed", 12 );
             }
+            else 
+            {
+                os_perso_derive_node_bip32( CX_CURVE_256K1, keyData->bip32Path, keyData->bip32PathLength, privateKeyData, NULL );
+            }
+
             cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, XYM_PRIVATE_KEY_LENGTH, &privateKey);
+            
             io_seproxyhal_io_heartbeat();
-            cx_ecfp_generate_pair2(CX_CURVE_Ed25519,
-                                    &publicKey,
-                                    &privateKey,
-                                    1,
-                                    algo);
-            explicit_bzero(&privateKey, sizeof(privateKey));
-            explicit_bzero(privateKeyData, sizeof(privateKeyData));
+
+            cx_ecfp_public_key_t  publicKey;
+            cx_ecfp_generate_pair2( CX_CURVE_Ed25519, &publicKey, &privateKey, 1, CX_SHA512 );
+
+            explicit_bzero( &privateKey,    sizeof(privateKey)     );
+            explicit_bzero( privateKeyData, sizeof(privateKeyData) );
+            
             io_seproxyhal_io_heartbeat();
-            xym_public_key_and_address(&publicKey,
-                                          network_type,
-                                          (uint8_t*) &xymPublicKey,
-                                          (char*) &address,
-                                          XYM_PRETTY_ADDRESS_LENGTH + 1
-                                          );
+
+            xym_public_key_and_address( &publicKey,
+                                         keyData->networkType,
+                                         key,
+                                         (char*) &address,
+                                         XYM_PRETTY_ADDRESS_LENGTH + 1 );
+
             io_seproxyhal_io_heartbeat();
+
             address[XYM_PRETTY_ADDRESS_LENGTH] = '\0';
         }
-        CATCH_OTHER(e) {
-            THROW(e);
+        CATCH_OTHER(e) 
+        {
+            handle_error( e );
         }
-        FINALLY {
-            explicit_bzero(privateKeyData, sizeof(privateKeyData));
-            explicit_bzero(&privateKey, sizeof(privateKey));
+        FINALLY 
+        {
+            explicit_bzero( privateKeyData, sizeof(privateKeyData) );
+            explicit_bzero( &privateKey,    sizeof(privateKey)     );
         }
     }
     END_TRY
 
-    if (p1 == P1_NON_CONFIRM) {
-        *tx = set_result_get_publicKey();
-        THROW(0x9000);
+
+}
+
+void handle_public_key( const ApduCommand_t* cmd )
+{
+    KeyData_t keyData;
+    bool succ = extract_parameters( cmd->p1, cmd->p2, cmd->data, cmd->lc, &keyData );
+    if(!succ)
+    {
+        return;
+    }
+
+
+    char address[ XYM_PRETTY_ADDRESS_LENGTH+1 ];
+    get_public_key( &keyData, G_xym_public_key.key, address );
+
+
+    if ( !keyData.confirmTransaction ) 
+    {
+        send_public_key();
+        //return result;
     }
     else {
         display_address_confirmation_ui(
@@ -143,7 +196,5 @@ void handle_public_key(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
                 on_address_confirmed,
                 on_address_rejected
         );
-
-        *flags |= IO_ASYNCH_REPLY;
     }
 }

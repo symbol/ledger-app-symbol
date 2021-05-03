@@ -44,7 +44,7 @@ typedef struct {
 
 typedef struct {
     uint16_t transactionType;
-    const uint8_t *data;
+    uint8_t  *data;           // TODO: not sure why this was const
     result_t result;
     uint32_t length;
     uint32_t offset;

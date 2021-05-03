@@ -46,5 +46,8 @@ extern transaction_context_t transactionContext;
 extern sign_state_e signState;
 
 void reset_transaction_context();
+void handle_error(uint16_t errorCode); //todo: use apdu error codes _t here 
+
+
 
 #endif //LEDGER_APP_XYM_GLOBAL_H

@@ -17,12 +17,27 @@
 ********************************************************************************/
 #include "global.h"
 #include "messages/sign_transaction.h"
+#include "io.h"
 
 transaction_context_t transactionContext;
 sign_state_e signState;
 
-void reset_transaction_context() {
+void reset_transaction_context()
+{
     explicit_bzero(&parseContext, sizeof(parse_context_t));
     explicit_bzero(&transactionContext, sizeof(transaction_context_t));
     signState = IDLE;
+}
+
+
+
+/**
+ * Resets the transaction context and sets an error reponse which will 
+ * be reported in the next 'io_exchange()' call.
+ * 
+ */
+void handle_error(uint16_t errorCode) 
+{
+    reset_transaction_context();
+    io_send_error( errorCode );
 }

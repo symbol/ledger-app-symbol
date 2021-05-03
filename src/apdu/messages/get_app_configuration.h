@@ -20,6 +20,6 @@
 
 #include <stdint.h>
 
-void handle_app_configuration(volatile unsigned int *tx);
+void handle_app_configuration( );
 
 #endif //LEDGER_APP_XYM_GETAPPCONFIGURATION_H

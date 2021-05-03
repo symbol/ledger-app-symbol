@@ -17,15 +17,20 @@
 ********************************************************************************/
 #include "get_app_configuration.h"
 #include <os.h>
+#include "io.h"
+#include "types.h"
 
 /*
-* LEDGER_MAJOR_VERSION, LEDGER_MINOR_VERSION, LEDGER_PATCH_VERSION define in Makefile
+* LEDGER_MAJOR_VERSION, LEDGER_MINOR_VERSION, LEDGER_PATCH_VERSION defined in Makefile
 */
-void handle_app_configuration(volatile unsigned int *tx) {
-    G_io_apdu_buffer[0] = 0x00;
-    G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
-    G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
-    G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
-    *tx = 4;
-    THROW(0x9000);
+void handle_app_configuration( ) 
+{
+    unsigned char data[4];
+    data[0] = 0x00;
+    data[1] = LEDGER_MAJOR_VERSION;
+    data[2] = LEDGER_MINOR_VERSION;
+    data[3] = LEDGER_PATCH_VERSION;
+
+    buffer_t buffer = { data, 4, 0 };
+    io_send_response( &buffer, OK );
 }

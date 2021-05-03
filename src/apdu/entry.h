@@ -17,7 +17,8 @@
 ********************************************************************************/
 #ifndef LEDGER_APP_XYM_ENTRY_H
 #define LEDGER_APP_XYM_ENTRY_H
+#include "types.h"
 
-void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx);
+void handle_apdu( const ApduCommand_t* cmd );
 
 #endif //LEDGER_APP_XYM_ENTRY_H
