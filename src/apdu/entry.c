@@ -27,42 +27,44 @@ unsigned char lastINS = 0;
 
 void handle_apdu( const ApduCommand_t* cmd ) 
 {
-            if ( cmd->cla != CLA)
-            {
-                handle_error( UNKNOWN_INSTRUCTION_CLASS );
-                return;
-            }
+  if ( cmd->cla != CLA)
+  {
+    handle_error( UNKNOWN_INSTRUCTION_CLASS );
+    return;
+  }
 
-            // Reset transaction context before starting to parse a new APDU message type.
-            // This helps protect against "Instruction Change" attacks
-            if( cmd->ins != lastINS )
-            {
-                reset_transaction_context();
-            }
+  // Reset transaction context before starting to parse a new APDU message type.
+  // This helps protect against "Instruction Change" attacks
+  if( cmd->ins != lastINS )
+  {
+    reset_transaction_context();
+  }
 
-            lastINS = cmd->ins;
+  lastINS = cmd->ins;
 
-            switch ( cmd->ins ) 
-            {
-                case GET_PUBLIC_KEY:
-                {
-                    handle_public_key( cmd );
-                    break;
-                }
+  switch ( cmd->ins ) 
+  {
+    case GET_PUBLIC_KEY:
+    {
+      handle_public_key( cmd );
+      break;
+    }
                 
-                case SIGN_TX:
-                {
-                    handle_sign( cmd );
-                    break;
-                }
+    case SIGN_TX:
+    {
+      handle_sign( cmd );
+      break;
+    }
                 
-                case GET_VERSION:
-                {
-                    handle_app_configuration( );
-                    break;
-                }                
-                default:
-                    handle_error( TRANSACTION_REJECTED );
-                    break;
-            }
+    case GET_VERSION:
+    {
+      handle_app_configuration( );
+      break;
+    }                
+    default:
+    {
+      handle_error( TRANSACTION_REJECTED );
+      break;
+    }
+  }
 }

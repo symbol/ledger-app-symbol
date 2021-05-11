@@ -22,7 +22,7 @@
 #include "ui/address/address_ui.h"
 #include "types.h"
 #include "io.h"
-
+#include "crypto.h"
 
 static struct 
 {
@@ -31,7 +31,7 @@ static struct
 } G_xym_public_key;
 
 
-int send_public_key() //TODO: Rename to send_public_key
+int send_public_key()
 {
     G_xym_public_key.keyLength = XYM_PUBLIC_KEY_LENGTH;    
     buffer_t buffer = { (uint8_t*) &G_xym_public_key, sizeof(G_xym_public_key), 0 };
@@ -73,14 +73,6 @@ bool extract_parameters( const uint8_t p1, const uint8_t p2, const uint8_t* data
         return false;
     }
 
-    // check bip32 path lenght is correct
-    uint8_t bip32PathLength = data[0];
-    if( (bip32PathLength < 1) || (bip32PathLength > MAX_BIP32_PATH) )
-    {
-        handle_error( INVALID_BIP32_PATH_LENGTH ); //TODO: This and the above error had the same error code (0x6a80), was that intentional? I changed this one to 0x6a81
-        return false;
-    }
-
     // check that p1 is set to either to confirm or not to confirm transaction by user
     if( (p1 != P1_CONFIRM) && (p1 != P1_NON_CONFIRM) )
     {
@@ -96,19 +88,18 @@ bool extract_parameters( const uint8_t p1, const uint8_t p2, const uint8_t* data
         return false;
     }
 
-    // convert data to bip32 paths
-    size_t dataIdx = 1;
-    for( size_t pathIdx = 0; pathIdx < bip32PathLength; pathIdx++, dataIdx += 4 )  // TODO: if bip32PathLength > 5 will this not cause a buffer overflow of data[] which is a size of 22 ??
+    // convert apdu data to bip32 path
+    uint8_t bip32PathLength = crypto_get_bip32_path( data, keyData->bip32Path );
+    if( 0 == bip32PathLength )
     {
-        // change endianness
-        keyData->bip32Path[pathIdx] = (data[dataIdx+0] << 24) | (data[ dataIdx+1 ] << 16) |
-                                      (data[dataIdx+2] <<  8) | (data[ dataIdx+3 ] <<  0);
+        handle_error( INVALID_BIP32_PATH_LENGTH );
+        return false;
     }
 
     // prepare output
     keyData->confirmTransaction = (p1 == P1_CONFIRM);
     keyData->bip32PathLength    = bip32PathLength;
-    keyData->networkType        = data[dataIdx];                                                  //TODO: no check is done on networkType. Are all values valid?
+    keyData->networkType        = data[bip32PathLength*4+1];                                   //TODO: no check is done on networkType. Are all values valid?
     keyData->curveType          = (((p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
 
     return true;
@@ -118,33 +109,24 @@ bool extract_parameters( const uint8_t p1, const uint8_t p2, const uint8_t* data
 void get_public_key( KeyData_t* keyData, uint8_t key[ XYM_PUBLIC_KEY_LENGTH ], char address[ XYM_PRETTY_ADDRESS_LENGTH+1 ] )
 {
     cx_ecfp_private_key_t privateKey;
-    uint8_t               privateKeyData[ XYM_PRIVATE_KEY_LENGTH ];
 
     io_seproxyhal_io_heartbeat();
 
     BEGIN_TRY {
         TRY 
         {            
-            if( keyData->curveType == CURVE_Ed25519 )
-            {
-                os_perso_derive_node_bip32_seed_key( HDW_ED25519_SLIP10, CX_CURVE_Ed25519, keyData->bip32Path, keyData->bip32PathLength, privateKeyData, NULL, (unsigned char*) "ed25519 seed", 12 );
-            }
-            else 
-            {
-                os_perso_derive_node_bip32( CX_CURVE_256K1, keyData->bip32Path, keyData->bip32PathLength, privateKeyData, NULL );
-            }
+            // get private key
+            crypto_derive_private_key( keyData->bip32Path, keyData->bip32PathLength, keyData->curveType, &privateKey );
 
-            cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, XYM_PRIVATE_KEY_LENGTH, &privateKey);
-            
             io_seproxyhal_io_heartbeat();
 
+            // generate public key from private key
             cx_ecfp_public_key_t  publicKey;
             cx_ecfp_generate_pair2( CX_CURVE_Ed25519, &publicKey, &privateKey, 1, CX_SHA512 );
-
-            explicit_bzero( &privateKey,    sizeof(privateKey)     );
-            explicit_bzero( privateKeyData, sizeof(privateKeyData) );
+            explicit_bzero( &privateKey, sizeof(privateKey)     );
             
             io_seproxyhal_io_heartbeat();
+
 
             xym_public_key_and_address( &publicKey,
                                          keyData->networkType,
@@ -162,7 +144,6 @@ void get_public_key( KeyData_t* keyData, uint8_t key[ XYM_PUBLIC_KEY_LENGTH ], c
         }
         FINALLY 
         {
-            explicit_bzero( privateKeyData, sizeof(privateKeyData) );
             explicit_bzero( &privateKey,    sizeof(privateKey)     );
         }
     }

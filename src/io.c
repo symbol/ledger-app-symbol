@@ -12,7 +12,7 @@ enum io_state_e {
     WAITING    /// waiting
 };
 
-uint32_t   G_output_len;
+uint32_t G_output_len;
 enum io_state_e G_io_state;
 
 
@@ -61,7 +61,7 @@ void write_u16_be(uint8_t *ptr, size_t offset, uint16_t value) {
 void io_init()
 {
    G_output_len = 0;
-   G_io_state = READY;
+   G_io_state   = READY;
 }
 
 

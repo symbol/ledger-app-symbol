@@ -66,6 +66,8 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
 
 void xym_main(void) 
 {
+    io_init();
+
     // DESIGN NOTE: the bootloader ignores the way APDU are fetched. The only
     // goal is to retrieve APDU.
     // When APDU are to be fetched from multiple IOs, like NFC+USB+BLE, make

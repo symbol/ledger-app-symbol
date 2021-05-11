@@ -20,6 +20,7 @@
 #include "limitations.h"
 #include "xym/format/fields.h"
 #include "xym/xym_helpers.h"
+#include "buffer.h"
 
 #define XYM_PERSISTENT_DELEGATED_HARVESTING 0xFE
 #define ALIGNMENT_BYTES 8
@@ -37,19 +38,25 @@ typedef struct {
 
 #pragma pack(pop)
 
-typedef struct {
+typedef struct 
+{
     uint8_t numFields;
-    field_t fields[MAX_FIELD_COUNT];
-} result_t;
+    field_t arr[MAX_FIELD_COUNT];
+} fields_array_t;
 
-typedef struct {
-    uint16_t transactionType;
-    uint8_t  *data;           // TODO: not sure why this was const
-    result_t result;
-    uint32_t length;
-    uint32_t offset;
-} parse_context_t;
 
-int parse_txn_context(parse_context_t *parseContext);
+/**
+ * Given a buffer with a transaction serialization, parses the buffer and 
+ * extracts parameters and creates a fields array to be displayed to the 
+ * user for verification.
+ * 
+ * The symbol serializations are defined here:
+ * https://docs.symbolplatform.com/serialization/index.html
+ * 
+ * @param[in]  rawTxdata  A buffer with the raw tx serialized data
+ * @param[out] fields     An array with the individual transaction fields  
+ * @return                one of the codes in the '_parser_error' enum
+ */
+int parse_txn_context( buffer_t* rawTxdata, fields_array_t* fields );
 
 #endif //LEDGER_APP_XYM_XYMPARSE_H

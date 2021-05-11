@@ -27,7 +27,7 @@
 char fieldName[MAX_FIELDNAME_LEN];
 char fieldValue[MAX_FIELD_LEN];
 
-result_t *transaction;
+static fields_array_t* fields;
 result_action_t approval_menu_callback;
 
 const ux_flow_step_t* ux_review_flow[MAX_FIELD_COUNT + 3];
@@ -74,7 +74,7 @@ static void update_value(const field_t *field) {
 
 static void update_content(int stackSlot) {
     int stepIndex = G_ux.flow_stack[stackSlot].index;
-    const field_t *field = &transaction->fields[stepIndex];
+    const field_t *field = &fields->arr[stepIndex];
     update_title(field);
     update_value(field);
 #ifdef HAVE_PRINTF
@@ -82,17 +82,17 @@ static void update_content(int stackSlot) {
 #endif
 }
 
-void display_review_menu(result_t *transactionParam, result_action_t callback) {
-    transaction = transactionParam;
+void display_review_menu(fields_array_t *transactionParam, result_action_t callback) {
+    fields = transactionParam;
     approval_menu_callback = callback;
 
-    for (int i = 0; i < transaction->numFields; ++i) {
+    for (int i = 0; i < fields->numFields; ++i) {
         ux_review_flow[i] = &ux_review_flow_step;
     }
 
-    ux_review_flow[transaction->numFields + 0] = &ux_review_flow_sign;
-    ux_review_flow[transaction->numFields + 1] = &ux_review_flow_reject;
-    ux_review_flow[transaction->numFields + 2] = FLOW_END_STEP;
+    ux_review_flow[fields->numFields + 0] = &ux_review_flow_sign;
+    ux_review_flow[fields->numFields + 1] = &ux_review_flow_reject;
+    ux_review_flow[fields->numFields + 2] = FLOW_END_STEP;
 
     ux_flow_init(0, ux_review_flow, NULL);
 }

@@ -22,10 +22,10 @@
 #include "xym/parse/xym_parse.h"
 #include "types.h"
 
-extern parse_context_t parseContext;
+extern fields_array_t fields;
+
 
 void handle_sign( const ApduCommand_t* cmd );
 
-void handle_packet_content( const ApduCommand_t* cmd );
 
 #endif //LEDGER_APP_XYM_SIGNTRANSACTION_H

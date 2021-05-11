@@ -23,14 +23,19 @@
 #include "transaction/transaction.h"
 #include "printers.h"
 #include "io.h"
+#include "crypto.h"
 
 #define PREFIX_LENGTH   4
 
-parse_context_t parseContext;
+buffer_t        rawTxData;  ///< transaction data is extracted from this buffer 
+fields_array_t  fields;     ///< extracted data from rawTxData is used to fill this structure, which is displayed to user for confirmation
 
-void sign_transaction() {
+void handle_packet_content( const ApduCommand_t* cmd );
 
-    if (signState != PENDING_REVIEW) 
+
+void sign_transaction()
+{
+    if( signState != PENDING_REVIEW ) 
     {
         reset_transaction_context();
         display_idle_menu();
@@ -38,39 +43,30 @@ void sign_transaction() {
     }
 
     // Abort if we accidentally end up here again after the transaction has already been signed
-    if (parseContext.data == NULL) 
+    if( rawTxData.ptr == NULL ) 
     {
         display_idle_menu();
         return;
     }
 
     cx_ecfp_private_key_t privateKey;
-    uint8_t privateKeyData[64];
     unsigned char signature[IO_APDU_BUFFER_SIZE];
     uint32_t sigLength = 0;
 
     io_seproxyhal_io_heartbeat();
 
-    BEGIN_TRY {
+    BEGIN_TRY
+    {
         TRY 
         {
-            if( transactionContext.curve == CURVE_Ed25519 )
-            {
-                os_perso_derive_node_bip32_seed_key( HDW_ED25519_SLIP10, CX_CURVE_Ed25519, transactionContext.bip32Path, transactionContext.pathLength, privateKeyData, NULL, (unsigned char*) "ed25519 seed", 12);
-            }
-            else
-            {
-                os_perso_derive_node_bip32( CX_CURVE_256K1, transactionContext.bip32Path, transactionContext.pathLength, privateKeyData, NULL );
-            }
-
-            cx_ecfp_init_private_key( CX_CURVE_Ed25519, privateKeyData, XYM_PRIVATE_KEY_LENGTH, &privateKey );
-            explicit_bzero( privateKeyData, sizeof(privateKeyData) );
-
+            // get private key from bip32 path
+            crypto_derive_private_key( transactionContext.bip32Path, transactionContext.pathLength, transactionContext.curve, &privateKey );
             io_seproxyhal_io_heartbeat();
 
+            // sign transaction
             sigLength = (uint32_t) cx_eddsa_sign( &privateKey, CX_LAST, CX_SHA512, transactionContext.rawTx,
-                                            transactionContext.rawTxLength, NULL, 0, signature,
-                                            IO_APDU_BUFFER_SIZE, NULL );
+                                                   transactionContext.rawTxLength, NULL, 0, signature,
+                                                   IO_APDU_BUFFER_SIZE, NULL );
         }
         CATCH_OTHER(e) 
         {
@@ -78,9 +74,8 @@ void sign_transaction() {
         }
         FINALLY 
         {
-            explicit_bzero( privateKeyData, sizeof(privateKeyData) );
-            explicit_bzero( &privateKey,    sizeof(privateKey)     );
-            explicit_bzero( signature,      sizeof(signature)      );
+            explicit_bzero( &privateKey, sizeof(privateKey) );
+            explicit_bzero( signature,   sizeof(signature)  );
 
             // Always reset transaction context after a transaction has been signed
             reset_transaction_context();
@@ -124,22 +119,15 @@ bool hasMore(uint8_t p1)
 
 void handle_first_packet( const ApduCommand_t* cmd ) 
 {
+    // check that its the first packet
     if( !isFirst(cmd->p1) )
     {
-        handle_error( INVALID_SIGNING_PACKET_ORDER ); //THROW(0x6A80) error code is used in get_public_key to indicate an invalid key length, i added a new error code for this situation
+        handle_error( INVALID_SIGNING_PACKET_ORDER );
         return;
     }
 
     // Reset old transaction data that might still remain
     reset_transaction_context();
-    parseContext.data = transactionContext.rawTx;
-
-    transactionContext.pathLength = cmd->data[0];
-    if( (transactionContext.pathLength < 1) || (transactionContext.pathLength > MAX_BIP32_PATH) )
-    {
-        handle_error( INVALID_BIP32_PATH_LENGTH );
-        return;
-    }
 
     // check that p2 is set to either SECP256K1 or ED25519
     if( ( ((cmd->p2 & P2_SECP256K1) == 0) && ((cmd->p2 & P2_ED25519) == 0) ) ||
@@ -149,16 +137,13 @@ void handle_first_packet( const ApduCommand_t* cmd )
         return;
     }
 
-    // convert data to bip32 paths
-    size_t dataIdx = 1;
-    for( size_t i = 0; i < transactionContext.pathLength; i++, dataIdx += 4 ) 
+    // convert apdu data to bip32 path
+    transactionContext.pathLength = crypto_get_bip32_path( cmd->data, transactionContext.bip32Path );
+    if( 0 == transactionContext.pathLength )
     {
-        // change endianness
-        transactionContext.bip32Path[i] = (cmd->data[ dataIdx+0 ] << 24) | (cmd->data[ dataIdx+1 ] << 16) |
-                                          (cmd->data[ dataIdx+2 ] <<  8) | (cmd->data[ dataIdx+3 ] <<  0);
+        handle_error( INVALID_BIP32_PATH_LENGTH );
+        return;
     }
-
-
     
     transactionContext.curve = (((cmd->p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
     handle_packet_content( cmd );
@@ -166,7 +151,8 @@ void handle_first_packet( const ApduCommand_t* cmd )
 
 void handle_subsequent_packet( const ApduCommand_t* cmd ) 
 {
-    if (isFirst(cmd->p1)) {
+    if (isFirst(cmd->p1)) 
+    {
         THROW( INVALID_SIGNING_PACKET_ORDER );
     }
 
@@ -175,35 +161,38 @@ void handle_subsequent_packet( const ApduCommand_t* cmd )
 
 void handle_packet_content( const ApduCommand_t* cmd ) 
 {
-    uint16_t totalLength = PREFIX_LENGTH + parseContext.length + cmd->lc;
-    if (totalLength > MAX_RAW_TX) 
+    uint16_t totalLength = PREFIX_LENGTH + transactionContext.rawTxLength + cmd->lc;
+    if( totalLength > MAX_RAW_TX ) 
     {
         // Abort if the user is trying to sign a too large transaction
-        handle_error(SIGNING_TRANSACTION_TOO_LARGE);
+        handle_error(SIGNING_DATA_TOO_LARGE);
         return;
     }
 
     // Append received data to stored transaction data
-    memcpy(parseContext.data + parseContext.length, cmd->data, cmd->lc);
-    parseContext.length += cmd->lc;
+    memcpy( transactionContext.rawTx + transactionContext.rawTxLength, cmd->data, cmd->lc );
+    transactionContext.rawTxLength += cmd->lc;
 
     if( hasMore(cmd->p1) ) 
     {
-        // Reply to sender with status OK
+        // Reply to sender with status OK, so that next packet is sent
         signState = WAITING_FOR_MORE;
         io_send_response(NULL, OK);
         return;
-    } 
+    }
     else
     {
         // No more data to receive, finish up and present transaction to user
         signState = PENDING_REVIEW;
 
-        transactionContext.rawTxLength = parseContext.length;
+        rawTxData.ptr    = transactionContext.rawTx;
+        rawTxData.size   = transactionContext.rawTxLength;
+        rawTxData.offset = 0;
 
+        int status = parse_txn_context(&rawTxData, &fields);
         // Try to parse the transaction. If the parsing fails, throw an exception
         // to cause the processing to abort and the transaction context to be reset.
-        switch( parse_txn_context(&parseContext) ) 
+        switch( status ) 
         {
             case E_TOO_MANY_FIELDS:
             {
@@ -222,7 +211,7 @@ void handle_packet_content( const ApduCommand_t* cmd )
                 break;
         }
 
-        review_transaction(&parseContext.result, sign_transaction, reject_transaction);
+        review_transaction(&fields, sign_transaction, reject_transaction);
     }
 }
 
@@ -242,7 +231,7 @@ void handle_sign( const ApduCommand_t* cmd )
         }
         default:
         {
-            THROW(0x6A80);
+            THROW(INVALID_INTERNAL_SIGNING_STATE);
         }
     }
 }

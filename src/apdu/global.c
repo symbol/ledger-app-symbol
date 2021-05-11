@@ -24,8 +24,8 @@ sign_state_e signState;
 
 void reset_transaction_context()
 {
-    explicit_bzero(&parseContext, sizeof(parse_context_t));
     explicit_bzero(&transactionContext, sizeof(transaction_context_t));
+    explicit_bzero(&fields, sizeof(fields_array_t));
     signState = IDLE;
 }
 

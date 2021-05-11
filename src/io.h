@@ -17,20 +17,37 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
+#include "buffer.h"
+
 
 /**
- * Struct for buffer with size and offset. Used for sending APDU responses.
+ * A set of higher level io commands that hide the complexity of 
+ * 'io_exchange()' and flags 'IO_RETURN_AFTER_TX' and 'IO_ASYNCH_REPLY', 
+ * by implemeting a simple state machine shown below: 
+ * 
+ * 
+ *   _______________  init()  _______   receive()        __________ 
+ *  | Uninitialized |------->| Ready |----------------->| Received |
+ *  |_______________|     ┌--|_______|<------------┐----|__________|
+ *   |                    |              send()    |             |   
+ *   |             send() |                        |             | receive()
+ *   |                    |   _______             _|_______      | 
+ *   | send()/receive()   └->| Error |<----------| Waiting |<----┘
+ *   └---------------------->|_______| receive() |_________|
+ * 
+ * 
+ * The main commands are send() and receive() and calling them will 
+ * result in a state change. The only blocking state is the 'Waiting' 
+ * state. When calling 'receive()' and not in 'Received' state, the function
+ * returns immediately with the APDU buffer. A subsequent 'receive()' call 
+ * without a previous 'send()' call, will block the call until another 
+ * thread/interrupt calls 'send()'
  */
-typedef struct 
-{
-    const uint8_t *ptr;    /// Pointer to byte buffer
-          size_t   size;   /// Size of byte buffer
-          size_t   offset; /// Offset in byte buffer
-} buffer_t;
+
 
 
 /**
- * Must be called once, before calling any other io commands in this header
+ * Must be called once in the main method, before calling any other io commands
  *
  */
 void io_init();

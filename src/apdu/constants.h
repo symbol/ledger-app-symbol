@@ -19,9 +19,6 @@
 #define LEDGER_APP_XYM_CONSTANTS_H
 
 #define CLA 0xE0
-//#define INS_GET_PUBLIC_KEY 0x02
-//#define INS_SIGN 0x04
-//#define INS_GET_APP_CONFIGURATION 0x06
 #define P1_CONFIRM 0x01
 #define P1_NON_CONFIRM 0x00
 #define P2_NO_CHAINCODE 0x00
@@ -39,12 +36,7 @@
 #define OFFSET_LC    4  // Offset of command data length
 #define OFFSET_CDATA 5  // Offset of command data
 
-typedef enum
-{
-    CURVE_Ed25519 = 1,
-    CURVE_256K1   = 2
 
-} CurveType_t;
 
 
 #endif //LEDGER_APP_XYM_CONSTANTS_H
