@@ -11,6 +11,7 @@ add_executable(test_transaction_parser
     ../src/xym/format/printers.c
     ../src/xym/format/readers.c    
     ../src/base32.c
+    ../src/buffer.c
 )
 
 target_compile_options(test_transaction_parser PRIVATE -Wall -Wextra -pedantic -Werror)

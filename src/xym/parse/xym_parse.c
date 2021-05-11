@@ -987,10 +987,6 @@ static int parse_inner_txn_content( buffer_t* rawTxData, uint32_t len, bool isCo
 
 static int parse_aggregate_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
-    // get fee
-    txn_fee_t *fee = (txn_fee_t*) buffer_offset_ptr_and_seek(rawTxData, sizeof(txn_fee_t)); // Read data and security check
-    if( !fee ) { return E_NOT_ENOUGH_DATA; }
-
     // get aggregate header
     aggregate_txn_t *txn = (aggregate_txn_t*) buffer_offset_ptr_and_seek(rawTxData, sizeof(aggregate_txn_t));
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
@@ -1002,9 +998,6 @@ static int parse_aggregate_txn_content( buffer_t* rawTxData, fields_array_t* fie
     BAIL_IF( add_new_field(fields, XYM_HASH256_AGG_HASH, STI_HASH256, XYM_TRANSACTION_HASH_LENGTH, p_tx_hash) ); // add transaction hash
     if( !buffer_can_read(rawTxData, txn->payloadSize) ) { return E_INVALID_DATA; }
     BAIL_IF( parse_inner_txn_content(rawTxData, txn->payloadSize, isCosigning, fields) );
-
-    
-    BAIL_IF(add_new_field(fields, XYM_UINT64_TXN_FEE, STI_XYM, sizeof(uint64_t), (const uint8_t*) &fee->maxFee)); // add max fee of aggregate tx
 
     return E_SUCCESS;
 }
@@ -1076,7 +1069,8 @@ static void set_sign_data_length( const buffer_t* rawTxdata, uint16_t transactio
             // XYM_AGGREGATE_SIGNING_LENGTH = XYM_TRANSACTION_HASH_LENGTH
             //                                + sizeof(common_header_t) + sizeof(txn_fee_t) = 84
             transactionContext.rawTxLength = XYM_AGGREGATE_SIGNING_LENGTH;
-        } else 
+        } 
+        else 
         {
             // Sign transaction hash only (multisig cosigning transaction)
             transactionContext.rawTxLength = XYM_TRANSACTION_HASH_LENGTH;
