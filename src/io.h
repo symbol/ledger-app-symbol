@@ -37,8 +37,8 @@
  * 
  * 
  * The main commands are send() and receive() and calling them will 
- * result in a state change. The only blocking state is the 'Waiting' 
- * state. When calling 'receive()' and not in 'Received' state, the function
+ * result in a state changes. The only blocking state is the 'Waiting' 
+ * state. When calling 'receive()' and in the 'Ready' state, the function
  * returns immediately with the APDU buffer. A subsequent 'receive()' call 
  * without a previous 'send()' call, will block the call until another 
  * thread/interrupt calls 'send()'

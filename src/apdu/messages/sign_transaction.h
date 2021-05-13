@@ -25,7 +25,18 @@
 extern fields_array_t fields;
 
 
-void handle_sign( const ApduCommand_t* cmd );
+
+/**
+ * Processes the APDU command, parses the serialized data and displays 
+ * the corresponding transaction fields to user, for verification
+ *
+ * @param[in] cmd
+ *   Structured APDU command (CLA, INS, P1, P2, Lc, Command data).
+ *
+ * @return zero or positive integer if success, negative integer otherwise.
+ *
+ */
+int handle_sign( const ApduCommand_t* cmd );
 
 
 #endif //LEDGER_APP_XYM_SIGNTRANSACTION_H

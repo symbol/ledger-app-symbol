@@ -162,30 +162,61 @@ static int add_new_field( fields_array_t* fields, uint8_t id, uint8_t data_type,
 }
 
 
+
+
+/**
+ * TransferTransaction:
+ * https://docs.symbolplatform.com/serialization/transfer.html#transfertransaction
+ * 
+ * 
+ * Input data (rawTxData)
+ * ----------------------------------
+ *      uint64_t maxFee;
+ *      uint64_t deadline;
+ * 
+ *      uint8_t  recipientAddress[ XYM_ADDRESS_LENGTH ];
+ *      uint16_t messageSize;
+ *      uint8_t  mosaicsCount;
+ *      uint32_t reserved1;
+ *      uint8_t  reserved2;
+ * 
+ *      mosaic_t mosaics[ mosaicsCount ];
+ *      uint8_t  message[ messageSize  ];
+ * ----------------------------------
+ *
+ * 
+ * Output (fields)
+ * ----------------------------------
+ *      recipientAddress
+ *      mosaicsCount
+ *      mosaic              ///< 'mosaicsCount' times
+ *      message
+ * 
+ *      maxFee (only if not multisig)
+ */
 static int parse_transfer_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
+    // get header
     txn_header_t *txn = (txn_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(txn_header_t)); // Read data and security check
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
 
     uint32_t length = txn->mosaicsCount * sizeof(mosaic_t) + txn->messageSize;
-    if( !buffer_can_read(rawTxData, length) ) { return E_INVALID_DATA; } //TODO: why this check??
+    if( !buffer_can_read(rawTxData, length) ) { return E_INVALID_DATA; } 
 
     if( txn->recipientAddress[0] == MAINNET_NETWORK_TYPE || txn->recipientAddress[0] == TESTNET_NETWORK_TYPE ) 
     {
-        BAIL_IF( add_new_field(fields, XYM_STR_RECIPIENT_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) txn->recipientAddress) ); // Show Recipient address
+        BAIL_IF( add_new_field(fields, XYM_STR_RECIPIENT_ADDRESS, STI_ADDRESS, XYM_ADDRESS_LENGTH, (const uint8_t*) txn->recipientAddress) ); // add recipient address
     } 
     else 
     {        
-        BAIL_IF( add_new_field(fields, XYM_STR_RECIPIENT_ADDRESS, STI_STR,    0,                (const uint8_t*) &txn->recipientAddress[0]) ); // Recipient alias to namespace notification
-        BAIL_IF( add_new_field(fields, XYM_UINT64_NS_ID,          STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->recipientAddress[1]) ); // Show alias namespace ID
+        BAIL_IF( add_new_field(fields, XYM_STR_RECIPIENT_ADDRESS, STI_STR,    0,                (const uint8_t*) &txn->recipientAddress[0]) ); // add recipient alias to namespace notification
+        BAIL_IF( add_new_field(fields, XYM_UINT64_NS_ID,          STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->recipientAddress[1]) ); // add alias namespace ID
     }
-
-    // Show sent mosaic count field
+    
     if( txn->mosaicsCount > 1 )
     {
-        BAIL_IF( add_new_field(fields, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->mosaicsCount) );
+        BAIL_IF( add_new_field(fields, XYM_UINT8_MOSAIC_COUNT, STI_UINT8, sizeof(uint8_t), (const uint8_t*) &txn->mosaicsCount) ); // add sent mosaic count field
     }
-
 
     const bool     is_using_mainnet = (transactionContext.bip32Path[1] & 0x7FFFFFFF) == 4343; // checks if the coin_type field of bip32 path is 'symbol'
     const uint64_t mosaic_net_id    = (is_using_mainnet ? XYM_MAINNET_MOSAIC_ID : XYM_TESTNET_MOSAIC_ID);
@@ -204,9 +235,8 @@ static int parse_transfer_txn_content( buffer_t* rawTxData, fields_array_t* fiel
         }
 
         if( mosaic->mosaicId != mosaic_net_id )
-        {
-            // Unknow mosaic notification
-            BAIL_IF( add_new_field(fields, XYM_UNKNOWN_MOSAIC, STI_STR, 0, (const uint8_t*) mosaic) ); //TODO: not sure why passing pointer to mosaic if size is 0
+        {            
+            BAIL_IF( add_new_field(fields, XYM_UNKNOWN_MOSAIC, STI_STR, 0, (const uint8_t*) mosaic) ); // Unknow mosaic notification
         }
 
         BAIL_IF( add_new_field(fields, XYM_MOSAIC_AMOUNT, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (const uint8_t*) mosaic) ); // Read data and security check
@@ -1086,8 +1116,8 @@ static void set_sign_data_length( const buffer_t* rawTxdata, uint16_t transactio
 
 int parse_txn_context( buffer_t* rawTxdata, fields_array_t* fields )
 {
-    // get common header which all transactions have
-    common_header_t* txnHeader = (common_header_t*) (rawTxdata->ptr + rawTxdata->offset);
+    // get common header
+    common_header_t* txnHeader = (common_header_t*) buffer_offset_ptr( rawTxdata );
     
     // move buffer offset to next data
     const bool succ = buffer_seek( rawTxdata, sizeof(common_header_t) );

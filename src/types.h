@@ -1,7 +1,7 @@
 #pragma once
 #include "stdint.h"
 
-enum ApduResponse
+typedef enum
 {
     OK                             = 0x9000,
     NO_APDU_RECEIVED               = 0x6982,
@@ -22,7 +22,10 @@ enum ApduResponse
     TOO_MANY_TRANSACTION_FIELDS    = 0x6701,
     INVALID_TRANSACTION_DATA       = 0x6702,
     INVALID_INTERNAL_SIGNING_STATE = 0x6703,
-};
+    INVALID_SIGNING_DATA           = 0x6A82,
+
+    INTERNAL_ERROR                 = 0x6A83
+} ApduResponse_t;
 
 
 /**

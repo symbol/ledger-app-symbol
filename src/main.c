@@ -33,47 +33,11 @@ unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 ux_state_t G_ux;
 bolos_ux_params_t G_ux_params;
 
-unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
-    switch (channel & ~(IO_FLAGS)) {
-    case CHANNEL_KEYBOARD:
-        break;
-
-    // multiplexed io exchange over a SPI channel and TLV encapsulated protocol
-    case CHANNEL_SPI:
-        if (tx_len) {
-            io_seproxyhal_spi_send(G_io_apdu_buffer, tx_len);
-
-            if (channel & IO_RESET_AFTER_REPLIED) {
-                reset();
-            }
-            return 0; // nothing received from the master so far (it's a tx
-                      // transaction)
-        } else {
-            return io_seproxyhal_spi_recv(G_io_apdu_buffer,
-                                          sizeof(G_io_apdu_buffer), 0);
-        }
-
-    default:
-        THROW(INVALID_PARAMETER);
-    }
-    return 0;
-}
-
-
-
-
-
 
 void xym_main(void) 
 {
     io_init();
 
-    // DESIGN NOTE: the bootloader ignores the way APDU are fetched. The only
-    // goal is to retrieve APDU.
-    // When APDU are to be fetched from multiple IOs, like NFC+USB+BLE, make
-    // sure the io_event is called with a
-    // switch event, before the apdu is replied to the bootloader. This avoid
-    // APDU injection faults.
     while( true )
     {
         BEGIN_TRY 
@@ -92,7 +56,7 @@ void xym_main(void)
                 ApduCommand_t cmd;
                 memset( &cmd, 0, sizeof(cmd) );
 
-                if( !apdu_parser(&cmd, G_io_apdu_buffer, size) ) 
+                if( !apdu_parser(G_io_apdu_buffer, size, &cmd) ) 
                 {
                     PRINTF("=> /!\\ BAD LENGTH: %.*H\n", size, G_io_apdu_buffer);
                     handle_error( WRONG_APDU_DATA_LENGTH );

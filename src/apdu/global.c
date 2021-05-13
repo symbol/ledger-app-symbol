@@ -30,14 +30,8 @@ void reset_transaction_context()
 }
 
 
-
-/**
- * Resets the transaction context and sets an error reponse which will 
- * be reported in the next 'io_exchange()' call.
- * 
- */
-void handle_error(uint16_t errorCode) 
+int handle_error( ApduResponse_t errorCode ) 
 {
     reset_transaction_context();
-    io_send_error( errorCode );
+    return io_send_error( errorCode );
 }

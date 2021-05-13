@@ -89,7 +89,7 @@ void ripemd(uint8_t *in, uint8_t inlen, uint8_t *out, uint8_t outlen) {
     cx_hash(&hash.header, CX_LAST, in, inlen, out, outlen);
 }
 
-void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, uint8_t *outPublicKey, char *outAddress, uint8_t outLen) 
+void xym_public_key_and_address( cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, uint8_t *outPublicKey, char *outAddress, uint8_t outLen ) 
 {
      // TODO: use defines instead hardcoded numbers
 

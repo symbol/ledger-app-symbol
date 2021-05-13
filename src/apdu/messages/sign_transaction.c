@@ -30,7 +30,7 @@
 buffer_t        rawTxData;  ///< transaction data is extracted from this buffer 
 fields_array_t  fields;     ///< extracted data from rawTxData is used to fill this structure, which is displayed to user for confirmation
 
-void handle_packet_content( const ApduCommand_t* cmd );
+ApduResponse_t handle_packet_content( const ApduCommand_t* cmd );
 
 
 void sign_transaction()
@@ -117,13 +117,12 @@ bool hasMore(uint8_t p1)
 	return (p1 & P1_MASK_MORE) != 0;
 }
 
-void handle_first_packet( const ApduCommand_t* cmd ) 
+ApduResponse_t handle_first_packet( const ApduCommand_t* cmd ) 
 {
     // check that its the first packet
     if( !isFirst(cmd->p1) )
     {
-        handle_error( INVALID_SIGNING_PACKET_ORDER );
-        return;
+        return INVALID_SIGNING_PACKET_ORDER;
     }
 
     // Reset old transaction data that might still remain
@@ -133,56 +132,56 @@ void handle_first_packet( const ApduCommand_t* cmd )
     if( ( ((cmd->p2 & P2_SECP256K1) == 0) && ((cmd->p2 & P2_ED25519) == 0) ) ||
         ( ((cmd->p2 & P2_SECP256K1) != 0) && ((cmd->p2 & P2_ED25519) != 0) )    )
     {
-        handle_error( INVALID_P1_OR_P2 );
-        return;
+        return INVALID_P1_OR_P2;
     }
 
     // convert apdu data to bip32 path
-    transactionContext.pathLength = crypto_get_bip32_path( cmd->data, transactionContext.bip32Path );
+    const buffer_t buffer = { cmd->data, cmd->lc, 0 };
+    transactionContext.pathLength = buffer_get_bip32_path( &buffer, transactionContext.bip32Path );
     if( 0 == transactionContext.pathLength )
     {
-        handle_error( INVALID_BIP32_PATH_LENGTH );
-        return;
+        return INVALID_BIP32_PATH_LENGTH;
     }
     
+    // set curve
     transactionContext.curve = (((cmd->p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
-    handle_packet_content( cmd );
+
+    return handle_packet_content( cmd );
 }
 
-void handle_subsequent_packet( const ApduCommand_t* cmd ) 
+ApduResponse_t handle_subsequent_packet( const ApduCommand_t* cmd ) 
 {
     if (isFirst(cmd->p1)) 
     {
         THROW( INVALID_SIGNING_PACKET_ORDER );
     }
 
-    handle_packet_content( cmd );
+    return handle_packet_content( cmd );
 }
 
-void handle_packet_content( const ApduCommand_t* cmd ) 
+ApduResponse_t handle_packet_content( const ApduCommand_t* cmd ) 
 {
     uint16_t totalLength = PREFIX_LENGTH + transactionContext.rawTxLength + cmd->lc;
-    if( totalLength > MAX_RAW_TX ) 
+    if( totalLength > MAX_RAW_TX )
     {
         // Abort if the user is trying to sign a too large transaction
-        handle_error(SIGNING_DATA_TOO_LARGE);
-        return;
+        return SIGNING_DATA_TOO_LARGE;
     }
 
     // Append received data to stored transaction data
     memcpy( transactionContext.rawTx + transactionContext.rawTxLength, cmd->data, cmd->lc );
     transactionContext.rawTxLength += cmd->lc;
 
-    if( hasMore(cmd->p1) ) 
+    if( hasMore(cmd->p1) )
     {
         // Reply to sender with status OK, so that next packet is sent
         signState = WAITING_FOR_MORE;
-        io_send_response(NULL, OK);
-        return;
+        const int succ = io_send_response(NULL, OK);
+        return ( (succ != -1) ? OK : INTERNAL_ERROR );
     }
     else
     {
-        // No more data to receive, finish up and present transaction to user
+        // All data received, prepare transaction fields to be presented to user
         signState = PENDING_REVIEW;
 
         rawTxData.ptr    = transactionContext.rawTx;
@@ -190,43 +189,43 @@ void handle_packet_content( const ApduCommand_t* cmd )
         rawTxData.offset = 0;
 
         int status = parse_txn_context(&rawTxData, &fields);
-        // Try to parse the transaction. If the parsing fails, throw an exception
-        // to cause the processing to abort and the transaction context to be reset.
-        switch( status ) 
+
+        switch( status )
         {
             case E_TOO_MANY_FIELDS:
             {
                 // Abort if there are too many fields to show on Ledger device
-                handle_error( TOO_MANY_TRANSACTION_FIELDS );
-                return;
+                return TOO_MANY_TRANSACTION_FIELDS;
             }
             case E_NOT_ENOUGH_DATA:
             case E_INVALID_DATA:
             {
-                // Mask real cause behind generic error (INCORRECT_DATA)
-                handle_error( TOO_MANY_TRANSACTION_FIELDS );
-                return;
+                return INVALID_SIGNING_DATA;
             }
-            default:
+            default: // E_SUCCESS
                 break;
         }
 
         review_transaction(&fields, sign_transaction, reject_transaction);
+
+        return OK;
     }
 }
 
-void handle_sign( const ApduCommand_t* cmd ) 
+int handle_sign( const ApduCommand_t* cmd ) 
 {
-    switch (signState) 
+    ApduResponse_t result;
+
+    switch( signState )
     {
         case IDLE:
         {
-            handle_first_packet( cmd );
+            result = handle_first_packet( cmd );
             break;
         }
         case WAITING_FOR_MORE:
         {
-            handle_subsequent_packet( cmd );
+            result = handle_subsequent_packet( cmd );
             break;
         }
         default:
@@ -234,4 +233,12 @@ void handle_sign( const ApduCommand_t* cmd )
             THROW(INVALID_INTERNAL_SIGNING_STATE);
         }
     }
+
+
+    if( OK != result )
+    {
+        return handle_error( result );
+    }
+
+    return 0;
 }

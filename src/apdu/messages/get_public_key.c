@@ -31,28 +31,6 @@ static struct
 } G_xym_public_key;
 
 
-int send_public_key()
-{
-    G_xym_public_key.keyLength = XYM_PUBLIC_KEY_LENGTH;    
-    buffer_t buffer = { (uint8_t*) &G_xym_public_key, sizeof(G_xym_public_key), 0 };
-    int      size   = io_send_response( &buffer, OK );
-
-    return size;
-}
-
-void on_address_confirmed() 
-{
-    send_public_key();
-    display_idle_menu();
-}
-
-void on_address_rejected() 
-{
-    io_send_error(ADDRESS_REJECTED);
-    display_idle_menu();
-}
-
-
 typedef struct 
 {
     bool        confirmTransaction;
@@ -63,119 +41,157 @@ typedef struct
 } KeyData_t;
 
 
+/**
+ * Sends public key to host in an APDU packet
+ */
+int send_public_key()
+{
+    G_xym_public_key.keyLength = XYM_PUBLIC_KEY_LENGTH;    
+    buffer_t buffer = { (uint8_t*) &G_xym_public_key, sizeof(G_xym_public_key), 0 };
+    int      succ   = io_send_response( &buffer, OK );
 
-bool extract_parameters( const uint8_t p1, const uint8_t p2, const uint8_t* data, const uint8_t dataLength, KeyData_t* keyData )
+    return succ;
+}
+
+/**
+ * Ledger Bolos callback for when user confirms address
+ */
+void on_address_confirmed() 
+{
+    send_public_key();
+    display_idle_menu();
+}
+
+
+/**
+ * Ledger Bolos callback for when user rejects address
+ */
+void on_address_rejected() 
+{
+    io_send_error(ADDRESS_REJECTED);
+    display_idle_menu();
+}
+
+
+/**
+ * Extracts key data used for calculating public key, from APDU parameters, and returns it in 'keyData'.
+ * 
+ */
+ApduResponse_t extract_parameters( const uint8_t p1, const uint8_t p2, uint8_t* data, const uint8_t dataLength, KeyData_t* keyData )
 {
     // check length of data is correct
     if( dataLength != XYM_PKG_GETPUBLICKEY_LENGTH )
     {
-        handle_error( INVALID_PKG_KEY_LENGTH );
-        return false;
+        return INVALID_PKG_KEY_LENGTH;
     }
 
     // check that p1 is set to either to confirm or not to confirm transaction by user
     if( (p1 != P1_CONFIRM) && (p1 != P1_NON_CONFIRM) )
     {
-        handle_error( INVALID_P1_OR_P2 );
-        return false;
+        return INVALID_P1_OR_P2;
     }
 
     // check that p2 is set to either SECP256K1 or ED25519
     if( ( ((p2 & P2_SECP256K1) == 0) && ((p2 & P2_ED25519) == 0) ) ||
         ( ((p2 & P2_SECP256K1) != 0) && ((p2 & P2_ED25519) != 0) )    )
     {
-        handle_error( INVALID_P1_OR_P2 );
-        return false;
+        return INVALID_P1_OR_P2;
     }
 
     // convert apdu data to bip32 path
-    uint8_t bip32PathLength = crypto_get_bip32_path( data, keyData->bip32Path );
+    const buffer_t buffer = { data, dataLength, 0 };
+    uint8_t bip32PathLength = buffer_get_bip32_path( &buffer, keyData->bip32Path );
     if( 0 == bip32PathLength )
     {
-        handle_error( INVALID_BIP32_PATH_LENGTH );
-        return false;
+        return INVALID_BIP32_PATH_LENGTH;
     }
 
     // prepare output
     keyData->confirmTransaction = (p1 == P1_CONFIRM);
     keyData->bip32PathLength    = bip32PathLength;
-    keyData->networkType        = data[bip32PathLength*4+1];                                   //TODO: no check is done on networkType. Are all values valid?
+    keyData->networkType        = data[bip32PathLength*4+1];                                   
     keyData->curveType          = (((p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
 
-    return true;
+    return OK;
 }
 
 
+/**
+ * Calculates and returns a public key which corresponds to bip32 path in 'keyData'
+ * 
+ */
 void get_public_key( KeyData_t* keyData, uint8_t key[ XYM_PUBLIC_KEY_LENGTH ], char address[ XYM_PRETTY_ADDRESS_LENGTH+1 ] )
 {
     cx_ecfp_private_key_t privateKey;
 
+    // ensure a I/O channel is not timing out
     io_seproxyhal_io_heartbeat();
 
-    BEGIN_TRY {
+    BEGIN_TRY 
+    {
         TRY 
         {            
             // get private key
             crypto_derive_private_key( keyData->bip32Path, keyData->bip32PathLength, keyData->curveType, &privateKey );
 
-            io_seproxyhal_io_heartbeat();
+            // ensure a I/O channel is not timing out
+            io_seproxyhal_io_heartbeat(); 
 
             // generate public key from private key
             cx_ecfp_public_key_t  publicKey;
             cx_ecfp_generate_pair2( CX_CURVE_Ed25519, &publicKey, &privateKey, 1, CX_SHA512 );
-            explicit_bzero( &privateKey, sizeof(privateKey)     );
+            explicit_bzero( &privateKey, sizeof(privateKey) );
             
-            io_seproxyhal_io_heartbeat();
+            // ensure a I/O channel is not timing out
+            io_seproxyhal_io_heartbeat(); 
 
-
+            // convert key to xym format
             xym_public_key_and_address( &publicKey,
                                          keyData->networkType,
                                          key,
-                                         (char*) &address,
+                                         address,
                                          XYM_PRETTY_ADDRESS_LENGTH + 1 );
 
-            io_seproxyhal_io_heartbeat();
+            // ensure a I/O channel is not timing out
+            io_seproxyhal_io_heartbeat(); 
 
             address[XYM_PRETTY_ADDRESS_LENGTH] = '\0';
         }
         CATCH_OTHER(e) 
         {
-            handle_error( e );
+            THROW(e);
         }
         FINALLY 
         {
-            explicit_bzero( &privateKey,    sizeof(privateKey)     );
+            explicit_bzero( &privateKey, sizeof(privateKey) );
         }
     }
     END_TRY
-
-
 }
 
-void handle_public_key( const ApduCommand_t* cmd )
+
+int handle_public_key( const ApduCommand_t* cmd )
 {
+    // extract key data used for calculating public key, from APDU parameters
     KeyData_t keyData;
-    bool succ = extract_parameters( cmd->p1, cmd->p2, cmd->data, cmd->lc, &keyData );
-    if(!succ)
+    const ApduResponse_t result = extract_parameters( cmd->p1, cmd->p2, cmd->data, cmd->lc, &keyData );
+    if( OK != result )
     {
-        return;
+        return handle_error(result);
     }
 
-
+    // get the public key
     char address[ XYM_PRETTY_ADDRESS_LENGTH+1 ];
     get_public_key( &keyData, G_xym_public_key.key, address );
 
-
-    if ( !keyData.confirmTransaction ) 
+    // send public key or ask for user confirmation
+    if( !keyData.confirmTransaction ) 
     {
-        send_public_key();
-        //return result;
+        return send_public_key();
     }
-    else {
-        display_address_confirmation_ui(
-                address,
-                on_address_confirmed,
-                on_address_rejected
-        );
+    else 
+    {
+        display_address_confirmation_ui( address, on_address_confirmed, on_address_rejected );
+        return 0; ///< this will make the 'io_receive()' call in the main loop block until user either confirms or rejects address.
     }
 }

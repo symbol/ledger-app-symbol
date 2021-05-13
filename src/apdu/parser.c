@@ -22,7 +22,7 @@
 #include "types.h"
 #include "constants.h"
 
-bool apdu_parser( ApduCommand_t* cmd, uint8_t* buf, size_t buf_len )
+bool apdu_parser( uint8_t* buf, size_t buf_len, ApduCommand_t* cmd )
 {
     // Check minimum length and Lc field of APDU command
     if (buf_len < OFFSET_CDATA || buf_len - OFFSET_CDATA != buf[OFFSET_LC]) 

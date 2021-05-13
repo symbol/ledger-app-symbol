@@ -16,8 +16,6 @@
 *  limitations under the License.
 ********************************************************************************/
 #include "entry.h"
-//#include <os.h>
-#include "constants.h"
 #include "global.h"
 #include "messages/get_public_key.h"
 #include "messages/sign_transaction.h"
@@ -25,12 +23,11 @@
 
 unsigned char lastINS = 0;
 
-void handle_apdu( const ApduCommand_t* cmd ) 
+int handle_apdu( const ApduCommand_t* cmd )
 {
-  if ( cmd->cla != CLA)
+  if( cmd->cla != CLA )
   {
-    handle_error( UNKNOWN_INSTRUCTION_CLASS );
-    return;
+    return handle_error( UNKNOWN_INSTRUCTION_CLASS );
   }
 
   // Reset transaction context before starting to parse a new APDU message type.
@@ -42,29 +39,27 @@ void handle_apdu( const ApduCommand_t* cmd )
 
   lastINS = cmd->ins;
 
-  switch ( cmd->ins ) 
+  switch( cmd->ins )
   {
     case GET_PUBLIC_KEY:
     {
-      handle_public_key( cmd );
-      break;
+      return handle_public_key( cmd );
     }
                 
     case SIGN_TX:
     {
-      handle_sign( cmd );
-      break;
+      return handle_sign( cmd );
     }
                 
     case GET_VERSION:
     {
-      handle_app_configuration( );
-      break;
-    }                
+      return handle_app_configuration( );
+    }
+         
     default:
     {
-      handle_error( TRANSACTION_REJECTED );
-      break;
+      return handle_error( TRANSACTION_REJECTED );
     }
   }
+
 }

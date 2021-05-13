@@ -20,31 +20,6 @@
 
 
 
-uint8_t crypto_get_bip32_path( const uint8_t* buffer, uint32_t* bip32Path )
-{
-    // check that bip32 path length is correct
-    uint8_t bip32PathLength = buffer[0];
-    if( (bip32PathLength < 1) || (bip32PathLength > MAX_BIP32_PATH) )
-    {
-        return 0;
-    }
-
-    // convert data to bip32 paths
-    size_t dataIdx = 1;
-    for( size_t pathIdx = 0; pathIdx < bip32PathLength; pathIdx++, dataIdx += 4 )  
-    {
-        // change endianness
-        bip32Path[pathIdx] = (buffer[dataIdx+0] << 24) | 
-                             (buffer[dataIdx+1] << 16) |
-                             (buffer[dataIdx+2] <<  8) | 
-                             (buffer[dataIdx+3] <<  0);
-    }
-
-    return bip32PathLength;
-}
-
-
-
 void crypto_derive_private_key( const uint32_t*              bip32_path,
                                 const uint8_t                bip32_path_len,
                                 const CurveType_t            curve_type,

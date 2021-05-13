@@ -4,6 +4,10 @@
 #include <stdint.h>  
 #include "os.h"
 
+
+/**
+ * Supported cryptographic curves
+ */
 typedef enum
 {
     CURVE_Ed25519 = 1,
@@ -11,13 +15,6 @@ typedef enum
 
 } CurveType_t;
 
-
-
-/**
- * raw APDU buffer
- * The converted bip32Path
- */
-uint8_t crypto_get_bip32_path( const uint8_t* buffer, uint32_t* bip32Path );
 
 
 
