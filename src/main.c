@@ -63,7 +63,9 @@ void xym_main(void)
                     continue;
                 }
 
-                PRINTF( "New APDU: CLA=%02X | INS=%02X | P1=%02X | P2=%02X | Lc=%02X | CData=%.*H\n", cmd.cla, cmd.ins, cmd.p1, cmd.p2, cmd.lc, cmd.data );
+                //PRINTF( "New APDU: CLA=%02X | INS=%02X | P1=%02X | P2=%02X | Lc=%02X | CData=%.*H\n", cmd.cla, cmd.ins, cmd.p1, cmd.p2, cmd.lc, cmd.data );
+                PRINTF("New APDU: %.*h \n", cmd.lc, cmd.data);
+
 
                 handle_apdu( &cmd );
             }

@@ -24,9 +24,13 @@
 #include "io.h"
 #include "crypto.h"
 
+/**
+ * The data structure which is sent to the host. 
+ * Both the key length and the key itself have to be sent.
+ */
 static struct 
 {
-    size_t  keyLength;
+    uint8_t keyLength;
     uint8_t key[ XYM_PUBLIC_KEY_LENGTH ];    
 } G_xym_public_key;
 
@@ -47,7 +51,7 @@ typedef struct
 int send_public_key()
 {
     G_xym_public_key.keyLength = XYM_PUBLIC_KEY_LENGTH;    
-    buffer_t buffer = { (uint8_t*) &G_xym_public_key, sizeof(G_xym_public_key), 0 };
+    buffer_t buffer = { (uint8_t*) &G_xym_public_key, sizeof(G_xym_public_key), 0 }; // yes, this is correct :)
     int      succ   = io_send_response( &buffer, OK );
 
     return succ;

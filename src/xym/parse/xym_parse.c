@@ -239,7 +239,7 @@ static int parse_transfer_txn_content( buffer_t* rawTxData, fields_array_t* fiel
             BAIL_IF( add_new_field(fields, XYM_UNKNOWN_MOSAIC, STI_STR, 0, (const uint8_t*) mosaic) ); // Unknow mosaic notification
         }
 
-        BAIL_IF( add_new_field(fields, XYM_MOSAIC_AMOUNT, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (const uint8_t*) mosaic) ); // Read data and security check
+        BAIL_IF( add_new_field(fields, XYM_MOSAIC_AMOUNT, STI_MOSAIC_CURRENCY, sizeof(mosaic_t), (const uint8_t*) mosaic) );
     }
 
     if( txn->messageSize == 0 ) 
@@ -394,7 +394,10 @@ static int parse_mosaic_supply_change_txn_content( buffer_t* rawTxData, fields_a
  * {
  *      addressAdditionsCount,
  *      addressAdditions,  // shown 'addressAdditionsCount' times
+ * 
+ *      addressDeletionsCount,
  *      addressDeletions,  // shown 'addressDeletionsCount' times
+ * 
  *      minApprovalDelta,
  *      minRemovalDelta,
  * 
@@ -1099,7 +1102,7 @@ static void set_sign_data_length( const buffer_t* rawTxdata, uint16_t transactio
             // XYM_AGGREGATE_SIGNING_LENGTH = XYM_TRANSACTION_HASH_LENGTH
             //                                + sizeof(common_header_t) + sizeof(txn_fee_t) = 84
             transactionContext.rawTxLength = XYM_AGGREGATE_SIGNING_LENGTH;
-        } 
+        }
         else 
         {
             // Sign transaction hash only (multisig cosigning transaction)

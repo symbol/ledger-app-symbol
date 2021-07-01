@@ -30,7 +30,7 @@
 buffer_t        rawTxData;  ///< transaction data is extracted from this buffer 
 fields_array_t  fields;     ///< extracted data from rawTxData is used to fill this structure, which is displayed to user for confirmation
 
-ApduResponse_t handle_packet_content( const ApduCommand_t* cmd );
+ApduResponse_t handle_packet_content( const buffer_t* buffer, const bool lastPacket );
 
 
 void sign_transaction()
@@ -75,7 +75,6 @@ void sign_transaction()
         FINALLY 
         {
             explicit_bzero( &privateKey, sizeof(privateKey) );
-            explicit_bzero( signature,   sizeof(signature)  );
 
             // Always reset transaction context after a transaction has been signed
             reset_transaction_context();
@@ -86,6 +85,7 @@ void sign_transaction()
     // send response
     buffer_t response = { signature, sigLength, 0 };
     io_send_response( &response, OK );
+    explicit_bzero( signature,   sizeof(signature)  );
 
     // Display back the original UX
     display_idle_menu();
@@ -146,7 +146,10 @@ ApduResponse_t handle_first_packet( const ApduCommand_t* cmd )
     // set curve
     transactionContext.curve = (((cmd->p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
 
-    return handle_packet_content( cmd );
+
+    const size_t bip32PathSize = transactionContext.pathLength*4+1;
+    buffer_t serializedData = { &cmd->data[bip32PathSize], cmd->lc-bip32PathSize, 0 }; // buffer without the bip32 path
+    return handle_packet_content( &serializedData, !hasMore(cmd->p1) );
 }
 
 ApduResponse_t handle_subsequent_packet( const ApduCommand_t* cmd ) 
@@ -155,13 +158,13 @@ ApduResponse_t handle_subsequent_packet( const ApduCommand_t* cmd )
     {
         THROW( INVALID_SIGNING_PACKET_ORDER );
     }
-
-    return handle_packet_content( cmd );
+    buffer_t serializedData = { cmd->data, cmd->lc, 0 }; // buffer without the bip32 path
+    return handle_packet_content( &serializedData, !hasMore(cmd->p1) );
 }
 
-ApduResponse_t handle_packet_content( const ApduCommand_t* cmd ) 
+ApduResponse_t handle_packet_content( const buffer_t* buffer, const bool lastPacket ) 
 {
-    uint16_t totalLength = PREFIX_LENGTH + transactionContext.rawTxLength + cmd->lc;
+    uint16_t totalLength = PREFIX_LENGTH + transactionContext.rawTxLength + buffer->size;
     if( totalLength > MAX_RAW_TX )
     {
         // Abort if the user is trying to sign a too large transaction
@@ -169,10 +172,10 @@ ApduResponse_t handle_packet_content( const ApduCommand_t* cmd )
     }
 
     // Append received data to stored transaction data
-    memcpy( transactionContext.rawTx + transactionContext.rawTxLength, cmd->data, cmd->lc );
-    transactionContext.rawTxLength += cmd->lc;
+    memcpy( transactionContext.rawTx + transactionContext.rawTxLength, buffer->ptr, buffer->size );
+    transactionContext.rawTxLength += buffer->size;
 
-    if( hasMore(cmd->p1) )
+    if( !lastPacket )
     {
         // Reply to sender with status OK, so that next packet is sent
         signState = WAITING_FOR_MORE;
