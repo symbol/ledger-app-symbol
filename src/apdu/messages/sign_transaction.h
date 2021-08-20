@@ -20,13 +20,23 @@
 
 #include <stdint.h>
 #include "xym/parse/xym_parse.h"
+#include "types.h"
 
-extern parse_context_t parseContext;
+extern fields_array_t fields;
 
-void handle_sign(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
-                uint8_t dataLength, volatile unsigned int *flags);
 
-void handle_packet_content(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
-                         uint8_t dataLength, volatile unsigned int *flags);
+
+/**
+ * Processes the APDU command, parses the serialized data and displays 
+ * the corresponding transaction fields to user, for verification
+ *
+ * @param[in] cmd
+ *   Structured APDU command (CLA, INS, P1, P2, Lc, Command data).
+ *
+ * @return zero or positive integer if success, negative integer otherwise.
+ *
+ */
+int handle_sign( const ApduCommand_t* cmd );
+
 
 #endif //LEDGER_APP_XYM_SIGNTRANSACTION_H

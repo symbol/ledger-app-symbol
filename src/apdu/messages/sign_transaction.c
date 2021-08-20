@@ -22,54 +22,59 @@
 #include "ui/main/idle_menu.h"
 #include "transaction/transaction.h"
 #include "printers.h"
+#include "io.h"
+#include "crypto.h"
 
 #define PREFIX_LENGTH   4
 
-parse_context_t parseContext;
+buffer_t        rawTxData;  ///< transaction data is extracted from this buffer 
+fields_array_t  fields;     ///< extracted data from rawTxData is used to fill this structure, which is displayed to user for confirmation
 
-void sign_transaction() {
-    uint8_t privateKeyData[64];
-    cx_ecfp_private_key_t privateKey;
-    uint32_t tx = 0;
+ApduResponse_t handle_packet_content( const buffer_t* buffer, const bool lastPacket );
 
-    if (signState != PENDING_REVIEW) {
+
+void sign_transaction()
+{
+    if( signState != PENDING_REVIEW ) 
+    {
         reset_transaction_context();
         display_idle_menu();
         return;
     }
 
     // Abort if we accidentally end up here again after the transaction has already been signed
-    if (parseContext.data == NULL) {
+    if( rawTxData.ptr == NULL ) 
+    {
         display_idle_menu();
         return;
     }
 
-    BEGIN_TRY {
-        TRY {
-            io_seproxyhal_io_heartbeat();
-            if (transactionContext.curve == CURVE_Ed25519) {
-                os_perso_derive_node_bip32_seed_key(
-                        HDW_ED25519_SLIP10, CX_CURVE_Ed25519, transactionContext.bip32Path,
-                        transactionContext.pathLength, privateKeyData, NULL, (unsigned char*) "ed25519 seed", 12);
-            } else {
-                os_perso_derive_node_bip32(
-                        CX_CURVE_256K1, transactionContext.bip32Path,
-                        transactionContext.pathLength, privateKeyData, NULL);
-            }
-            cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, XYM_PRIVATE_KEY_LENGTH, &privateKey);
-            explicit_bzero(privateKeyData, sizeof(privateKeyData));
-            io_seproxyhal_io_heartbeat();
-            tx = (uint32_t) cx_eddsa_sign(&privateKey, CX_LAST, CX_SHA512, transactionContext.rawTx,
-                                              transactionContext.rawTxLength, NULL, 0, G_io_apdu_buffer,
-                                              IO_APDU_BUFFER_SIZE, NULL);
+    cx_ecfp_private_key_t privateKey;
+    unsigned char signature[IO_APDU_BUFFER_SIZE];
+    uint32_t sigLength = 0;
 
+    io_seproxyhal_io_heartbeat();
+
+    BEGIN_TRY
+    {
+        TRY 
+        {
+            // get private key from bip32 path
+            crypto_derive_private_key( transactionContext.bip32Path, transactionContext.pathLength, transactionContext.curve, &privateKey );
+            io_seproxyhal_io_heartbeat();
+
+            // sign transaction
+            sigLength = (uint32_t) cx_eddsa_sign( &privateKey, CX_LAST, CX_SHA512, transactionContext.rawTx,
+                                                   transactionContext.rawTxLength, NULL, 0, signature,
+                                                   IO_APDU_BUFFER_SIZE, NULL );
         }
-        CATCH_OTHER(e) {
+        CATCH_OTHER(e) 
+        {
             THROW(e);
         }
-        FINALLY {
-            explicit_bzero(privateKeyData, sizeof(privateKeyData));
-            explicit_bzero(&privateKey, sizeof(privateKey));
+        FINALLY 
+        {
+            explicit_bzero( &privateKey, sizeof(privateKey) );
 
             // Always reset transaction context after a transaction has been signed
             reset_transaction_context();
@@ -77,142 +82,166 @@ void sign_transaction() {
     }
     END_TRY
 
-    G_io_apdu_buffer[tx++] = 0x90;
-    G_io_apdu_buffer[tx++] = 0x00;
+    // send response
+    buffer_t response = { signature, sigLength, 0 };
+    io_send_response( &response, OK );
+    explicit_bzero( signature,   sizeof(signature)  );
 
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
     // Display back the original UX
     display_idle_menu();
 }
 
-void reject_transaction() {
-    if (signState != PENDING_REVIEW) {
+void reject_transaction() 
+{
+    if (signState != PENDING_REVIEW) 
+    {
         reset_transaction_context();
         display_idle_menu();
         return;
     }
 
-    G_io_apdu_buffer[0] = 0x69;
-    G_io_apdu_buffer[1] = 0x85;
+    // notify of rejected transaction
+    handle_error( TRANSACTION_REJECTED );
 
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-
-    // Reset transaction context and display back the original UX
-    reset_transaction_context();
+    // display the idle menu
     display_idle_menu();
 }
 
-bool isFirst(uint8_t p1) {
-    //return (p1 & P1_CONFIRM) == 0;
+bool isFirst(uint8_t p1) 
+{
 	return (p1 & P1_MASK_ORDER) == 0;
 }
 
-bool hasMore(uint8_t p1) {
-    // return (p1 & P1_MORE) != 0;
+bool hasMore(uint8_t p1) 
+{
 	return (p1 & P1_MASK_MORE) != 0;
 }
 
-void handle_first_packet(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
-                       uint8_t dataLength, volatile unsigned int *flags) {
-    uint32_t i;
-    if (!isFirst(p1)) {
-        THROW(0x6A80);
+ApduResponse_t handle_first_packet( const ApduCommand_t* cmd ) 
+{
+    // check that its the first packet
+    if( !isFirst(cmd->p1) )
+    {
+        return INVALID_SIGNING_PACKET_ORDER;
     }
 
     // Reset old transaction data that might still remain
     reset_transaction_context();
-    parseContext.data = transactionContext.rawTx;
 
-    transactionContext.pathLength = workBuffer[0];
-    if ((transactionContext.pathLength < 0x01) ||
-        (transactionContext.pathLength > MAX_BIP32_PATH)) {
-        THROW(0x6a81);
+    // check that p2 is set to either SECP256K1 or ED25519
+    if( ( ((cmd->p2 & P2_SECP256K1) == 0) && ((cmd->p2 & P2_ED25519) == 0) ) ||
+        ( ((cmd->p2 & P2_SECP256K1) != 0) && ((cmd->p2 & P2_ED25519) != 0) )    )
+    {
+        return INVALID_P1_OR_P2;
     }
-    workBuffer++;
-    dataLength--;
-    for (i = 0; i < transactionContext.pathLength; i++) {
-        transactionContext.bip32Path[i] =
-                (workBuffer[0] << 24u) | (workBuffer[1] << 16u) |
-                (workBuffer[2] << 8u) | (workBuffer[3]);
-        workBuffer += 4;
-        dataLength -= 4;
+
+    // convert apdu data to bip32 path
+    const buffer_t buffer = { cmd->data, cmd->lc, 0 };
+    transactionContext.pathLength = buffer_get_bip32_path( &buffer, transactionContext.bip32Path );
+    if( 0 == transactionContext.pathLength )
+    {
+        return INVALID_BIP32_PATH_LENGTH;
     }
-    if (((p2 & P2_SECP256K1) == 0) && ((p2 & P2_ED25519) == 0)) {
-        THROW(0x6B00);
-    }
-    if (((p2 & P2_SECP256K1) != 0) && ((p2 & P2_ED25519) != 0)) {
-        THROW(0x6B00);
-    }
-    transactionContext.curve = (((p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
-    handle_packet_content(p1, p2, workBuffer, dataLength, flags);
+    
+    // set curve
+    transactionContext.curve = (((cmd->p2 & P2_ED25519) != 0) ? CURVE_Ed25519 : CURVE_256K1);
+
+
+    const size_t bip32PathSize = transactionContext.pathLength*4+1;
+    buffer_t serializedData = { &cmd->data[bip32PathSize], cmd->lc-bip32PathSize, 0 }; // buffer without the bip32 path
+    return handle_packet_content( &serializedData, !hasMore(cmd->p1) );
 }
 
-void handle_subsequent_packet(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
-                            uint8_t dataLength, volatile unsigned int *flags) {
-    if (isFirst(p1)) {
-        THROW(0x6A80);
+ApduResponse_t handle_subsequent_packet( const ApduCommand_t* cmd ) 
+{
+    if (isFirst(cmd->p1)) 
+    {
+        THROW( INVALID_SIGNING_PACKET_ORDER );
     }
-
-    handle_packet_content(p1, p2, workBuffer, dataLength, flags);
+    buffer_t serializedData = { cmd->data, cmd->lc, 0 }; // buffer without the bip32 path
+    return handle_packet_content( &serializedData, !hasMore(cmd->p1) );
 }
 
-void handle_packet_content(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
-                         uint8_t dataLength, volatile unsigned int *flags) {
-
-    uint16_t totalLength = PREFIX_LENGTH + parseContext.length + dataLength;
-    if (totalLength > MAX_RAW_TX) {
+ApduResponse_t handle_packet_content( const buffer_t* buffer, const bool lastPacket ) 
+{
+    uint16_t totalLength = PREFIX_LENGTH + transactionContext.rawTxLength + buffer->size;
+    if( totalLength > MAX_RAW_TX )
+    {
         // Abort if the user is trying to sign a too large transaction
-        THROW(0x6700);
+        return SIGNING_DATA_TOO_LARGE;
     }
 
     // Append received data to stored transaction data
-    memcpy(parseContext.data + parseContext.length, workBuffer, dataLength);
-    parseContext.length += dataLength;
+    memcpy( transactionContext.rawTx + transactionContext.rawTxLength, buffer->ptr, buffer->size );
+    transactionContext.rawTxLength += buffer->size;
 
-    if (hasMore(p1)) {
-        // Reply to sender with status OK
+    if( !lastPacket )
+    {
+        // Reply to sender with status OK, so that next packet is sent
         signState = WAITING_FOR_MORE;
-        THROW(0x9000);
-    } else {
-        // No more data to receive, finish up and present transaction to user
+        const int succ = io_send_response(NULL, OK);
+        return ( (succ != -1) ? OK : INTERNAL_ERROR );
+    }
+    else
+    {
+        // All data received, prepare transaction fields to be presented to user
         signState = PENDING_REVIEW;
 
-        transactionContext.rawTxLength = parseContext.length;
+        rawTxData.ptr    = transactionContext.rawTx;
+        rawTxData.size   = transactionContext.rawTxLength;
+        rawTxData.offset = 0;
 
-        // Try to parse the transaction. If the parsing fails, throw an exception
-        // to cause the processing to abort and the transaction context to be reset.
-        switch (parse_txn_context(&parseContext)) {
+        int status = parse_txn_context(&rawTxData, &fields);
+
+        switch( status )
+        {
             case E_TOO_MANY_FIELDS:
+            {
                 // Abort if there are too many fields to show on Ledger device
-                THROW(0x6700);
-                break;
+                return TOO_MANY_TRANSACTION_FIELDS;
+            }
             case E_NOT_ENOUGH_DATA:
             case E_INVALID_DATA:
-                // Mask real cause behind generic error (INCORRECT_DATA)
-                THROW(0x6a80);
-                break;
-            default:
+            {
+                return INVALID_SIGNING_DATA;
+            }
+            default: // E_SUCCESS
                 break;
         }
 
-        review_transaction(&parseContext.result, sign_transaction, reject_transaction);
+        review_transaction(&fields, sign_transaction, reject_transaction);
 
-        *flags |= IO_ASYNCH_REPLY;
+        return OK;
     }
 }
 
-void handle_sign(uint8_t p1, uint8_t p2, uint8_t *workBuffer,
-                uint8_t dataLength, volatile unsigned int *flags) {
-    switch (signState) {
+int handle_sign( const ApduCommand_t* cmd ) 
+{
+    ApduResponse_t result;
+
+    switch( signState )
+    {
         case IDLE:
-            handle_first_packet(p1, p2, workBuffer, dataLength, flags);
+        {
+            result = handle_first_packet( cmd );
             break;
+        }
         case WAITING_FOR_MORE:
-            handle_subsequent_packet(p1, p2, workBuffer, dataLength, flags);
+        {
+            result = handle_subsequent_packet( cmd );
             break;
+        }
         default:
-            THROW(0x6A80);
+        {
+            THROW(INVALID_INTERNAL_SIGNING_STATE);
+        }
     }
+
+
+    if( OK != result )
+    {
+        return handle_error( result );
+    }
+
+    return 0;
 }

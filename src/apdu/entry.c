@@ -16,8 +16,6 @@
 *  limitations under the License.
 ********************************************************************************/
 #include "entry.h"
-#include <os.h>
-#include "constants.h"
 #include "global.h"
 #include "messages/get_public_key.h"
 #include "messages/sign_transaction.h"
@@ -25,71 +23,43 @@
 
 unsigned char lastINS = 0;
 
-void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
-    unsigned short sw = 0;
+int handle_apdu( const ApduCommand_t* cmd )
+{
+  if( cmd->cla != CLA )
+  {
+    return handle_error( UNKNOWN_INSTRUCTION_CLASS );
+  }
 
-    BEGIN_TRY {
-        TRY {
-            if (G_io_apdu_buffer[OFFSET_CLA] != CLA) {
-                THROW(0x6E00);
-            }
+  // Reset transaction context before starting to parse a new APDU message type.
+  // This helps protect against "Instruction Change" attacks
+  if( cmd->ins != lastINS )
+  {
+    reset_transaction_context();
+  }
 
-            // Reset transaction context before starting to parse a new APDU message type.
-            // This helps protect against "Instruction Change" attacks
-            if (G_io_apdu_buffer[OFFSET_INS] != lastINS) {
-                reset_transaction_context();
-            }
+  lastINS = cmd->ins;
 
-            lastINS = G_io_apdu_buffer[OFFSET_INS];
-
-            switch (G_io_apdu_buffer[OFFSET_INS]) {
-                case INS_GET_PUBLIC_KEY:
-                    handle_public_key(G_io_apdu_buffer[OFFSET_P1],
-                                       G_io_apdu_buffer[OFFSET_P2],
-                                       G_io_apdu_buffer + OFFSET_CDATA,
-                                       G_io_apdu_buffer[OFFSET_LC], flags, tx);
-                    break;
-
-                case INS_SIGN:
-                    handle_sign(G_io_apdu_buffer[OFFSET_P1],
-                               G_io_apdu_buffer[OFFSET_P2],
-                               G_io_apdu_buffer + OFFSET_CDATA,
-                               G_io_apdu_buffer[OFFSET_LC], flags);
-                    break;
-
-                case INS_GET_APP_CONFIGURATION:
-                    handle_app_configuration(tx);
-                    break;
-
-                default:
-                    THROW(0x6D00);
-                    break;
-            }
-        }
-        CATCH_OTHER(e) {
-            switch (e & 0xF000u) {
-                case 0x6000:
-                    // Wipe the transaction context and report the exception
-                    sw = e;
-                    reset_transaction_context();
-                    break;
-                case 0x9000:
-                    // All is well
-                    sw = e;
-                    break;
-                default:
-                    // Internal error, wipe the transaction context and report the exception
-                    sw = 0x6800u | (e & 0x7FFu);
-                    reset_transaction_context();
-                    break;
-            }
-            // Unexpected exception => report
-            G_io_apdu_buffer[*tx] = sw >> 8u;
-            G_io_apdu_buffer[*tx + 1] = sw;
-            *tx += 2;
-        }
-        FINALLY {
-        }
+  switch( cmd->ins )
+  {
+    case GET_PUBLIC_KEY:
+    {
+      return handle_public_key( cmd );
     }
-    END_TRY
+                
+    case SIGN_TX:
+    {
+      return handle_sign( cmd );
+    }
+                
+    case GET_VERSION:
+    {
+      return handle_app_configuration( );
+    }
+         
+    default:
+    {
+      return handle_error( TRANSACTION_REJECTED );
+    }
+  }
+
 }

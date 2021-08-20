@@ -18,10 +18,20 @@
 #ifndef LEDGER_APP_XYM_GETPUBLICKEY_H
 #define LEDGER_APP_XYM_GETPUBLICKEY_H
 
-#include <stdint.h>
+#include "types.h"
 
-void handle_public_key(uint8_t p1, uint8_t p2, uint8_t *dataBuffer,
-                        uint16_t dataLength, volatile unsigned int *flags,
-                        volatile unsigned int *tx);
+
+
+/**
+ * Processes the APDU command, extracts the key data and displays 
+ * the corresponding public key to user for verification
+ *
+ * @param[in] cmd
+ *   Structured APDU command (CLA, INS, P1, P2, Lc, Command data).
+ *
+ * @return zero or positive integer if success, negative integer otherwise.
+ *
+ */
+int handle_public_key( const ApduCommand_t* cmd );
 
 #endif //LEDGER_APP_XYM_GETPUBLICKEY_H

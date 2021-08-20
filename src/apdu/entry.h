@@ -17,7 +17,19 @@
 ********************************************************************************/
 #ifndef LEDGER_APP_XYM_ENTRY_H
 #define LEDGER_APP_XYM_ENTRY_H
+#include "types.h"
 
-void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx);
+
+
+/**
+ * Dispatch the APDU command to the right handler.
+ *
+ * @param[in] cmd
+ *   Structured APDU command (CLA, INS, P1, P2, Lc, Command data).
+ *
+ * @return zero or positive integer if success, negative integer otherwise.
+ *
+ */
+int handle_apdu( const ApduCommand_t* cmd );
 
 #endif //LEDGER_APP_XYM_ENTRY_H

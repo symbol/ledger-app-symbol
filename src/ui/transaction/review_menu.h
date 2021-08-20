@@ -23,6 +23,6 @@
 #define OPTION_SIGN 0
 #define OPTION_REJECT 1
 
-void display_review_menu(result_t *transactionParam, result_action_t callback);
+void display_review_menu(fields_array_t* parsedFields, result_action_t callback);
 
 #endif //LEDGER_APP_XYM_REVIEWMENU_H

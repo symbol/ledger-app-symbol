@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include "constants.h"
 #include "limitations.h"
+#include "types.h"
 
 typedef enum {
     IDLE,
@@ -46,5 +47,14 @@ extern transaction_context_t transactionContext;
 extern sign_state_e signState;
 
 void reset_transaction_context();
+
+
+/**
+ * Resets the transaction context and send an error reponse 
+ * to host.
+ * 
+ */
+int handle_error( ApduResponse_t errorCode );
+
 
 #endif //LEDGER_APP_XYM_GLOBAL_H

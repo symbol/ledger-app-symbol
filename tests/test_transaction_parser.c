@@ -35,29 +35,39 @@ static uint8_t *load_transaction_data(const char *filename, size_t *size) {
     return data;
 }
 
-static void check_transaction_results(const char *filename, int num_fields, const result_entry_t *expected) {
-    parse_context_t context = {0};
-    char field_name[MAX_FIELDNAME_LEN];
-    char field_value[MAX_FIELD_LEN];
+
+
+static void check_transaction_results( const char *filename, int num_fields, const result_entry_t *expected )
+{
+    buffer_t       rawTxData;
+    fields_array_t fields;
+    
+    char field_name [ MAX_FIELDNAME_LEN ];
+    char field_value[ MAX_FIELD_LEN     ];
 
     size_t tx_length;
     uint8_t * const tx_data = load_transaction_data(filename, &tx_length);
     assert_non_null(tx_data);
 
-    context.data = tx_data;
-    context.length = tx_length;
+    rawTxData.ptr    = tx_data;
+    rawTxData.size   = tx_length;
+    rawTxData.offset = 0;
+    
+    assert_int_equal( parse_txn_context(&rawTxData, &fields), 0          );
+    assert_int_equal( fields.numFields,                       num_fields );
 
-    assert_int_equal(parse_txn_context(&context), 0);
-    assert_int_equal(context.result.numFields, num_fields);
-
-    for (int i = 0; i < context.result.numFields; i++) {
-        const field_t *field = &context.result.fields[i];
+    for( int i = 0; i < fields.numFields; i++ )
+    {
+        const field_t *field = &fields.arr[i];
         resolve_fieldname(field, field_name);
         format_field(field, field_value);
-        assert_string_equal(expected[i].field_name, field_name);
-        assert_string_equal(expected[i].field_value, field_value);
+        
+        assert_string_equal( expected[i].field_name,  field_name  );
+        assert_string_equal( expected[i].field_value, field_value );
     }
+    
     free(tx_data);
+
     return;
 }
 
