@@ -24,16 +24,7 @@
 #include "io.h"
 #include "crypto.h"
 
-/**
- * The data structure which is sent to the host. 
- * Both the key length and the key itself have to be sent.
- */
-static struct 
-{
-    uint8_t keyLength;
-    uint8_t key[ XYM_PUBLIC_KEY_LENGTH ];    
-} G_xym_public_key;
-
+uint8_t G_xym_public_key[ XYM_PUBLIC_KEY_LENGTH ];
 
 typedef struct 
 {
@@ -50,11 +41,13 @@ typedef struct
  */
 int send_public_key()
 {
-    G_xym_public_key.keyLength = XYM_PUBLIC_KEY_LENGTH;    
-    buffer_t buffer = { (uint8_t*) &G_xym_public_key, sizeof(G_xym_public_key), 0 }; // yes, this is correct :)
-    int      succ   = io_send_response( &buffer, OK );
+    size_t tx = 0;
+    G_io_apdu_buffer[tx++] = XYM_PUBLIC_KEY_LENGTH;
+    memcpy(G_io_apdu_buffer + tx, G_xym_public_key, XYM_PUBLIC_KEY_LENGTH);
+    tx += XYM_PUBLIC_KEY_LENGTH;
+    buffer_t buffer = { G_io_apdu_buffer, tx, 0 };
 
-    return succ;
+    return io_send_response( &buffer, OK );
 }
 
 /**
@@ -186,7 +179,7 @@ int handle_public_key( const ApduCommand_t* cmd )
 
     // get the public key
     char address[ XYM_PRETTY_ADDRESS_LENGTH+1 ];
-    get_public_key( &keyData, G_xym_public_key.key, address );
+    get_public_key( &keyData, G_xym_public_key, address );
 
     // send public key or ask for user confirmation
     if( !keyData.confirmTransaction ) 
