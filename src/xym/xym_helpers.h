@@ -26,10 +26,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#if !defined(TARGET_NANOS) && !defined(TARGET_NANOX)
-#include <bsd/string.h>
-#endif
-
 #define XYM_TXN_TRANSFER 0x4154
 #define XYM_TXN_REGISTER_NAMESPACE 0x414E
 #define XYM_TXN_ADDRESS_ALIAS 0x424E

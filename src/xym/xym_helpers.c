@@ -18,6 +18,10 @@
 #include "xym_helpers.h"
 #include <string.h>
 
+#ifdef FUZZ
+#include <bsd/string.h>
+#endif // FUZZ
+
 void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out, size_t outlen) {
     char buffer[AMOUNT_MAX_SIZE];
     uint64_t dVal = amount;

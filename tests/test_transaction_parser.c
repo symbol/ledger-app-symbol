@@ -3,7 +3,6 @@
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdint.h>
-#include <bsd/string.h>
 
 #include "cmocka.h"
 

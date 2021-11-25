@@ -19,6 +19,10 @@
 #include <stdint.h>
 #include "printers.h"
 
+#if defined(FUZZ)
+#include <bsd/string.h>
+#endif
+
 int snprintf_number(char *dst, uint16_t len, uint64_t value) {
     char *p = dst;
 
