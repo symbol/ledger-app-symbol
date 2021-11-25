@@ -22,7 +22,13 @@ include $(BOLOS_SDK)/Makefile.defines
 
 #  43	0x8000002b	XYM	SYMBOL
 APPNAME = 'Symbol'
-APP_LOAD_PARAMS=--appFlags 0x240 --path "44'/4343'" --path "44'/1'" --curve secp256k1 --curve ed25519 $(COMMON_LOAD_PARAMS)
+
+ifeq ($(TARGET_NAME), TARGET_NANOX)
+APP_LOAD_FLAGS=--appFlags 0x200  # APPLICATION_FLAG_BOLOS_SETTINGS
+else
+APP_LOAD_FLAGS=--appFlags 0x000
+endif
+APP_LOAD_PARAMS=$(APP_LOAD_FLAGS) --path "44'/4343'" --path "44'/1'" --curve secp256k1 --curve ed25519 $(COMMON_LOAD_PARAMS)
 
 APPVERSION_M=1
 APPVERSION_N=0
