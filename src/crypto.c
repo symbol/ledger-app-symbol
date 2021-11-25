@@ -18,6 +18,7 @@
 #include "xym_helpers.h"
 #include "limitations.h"
 
+#include <string.h>
 
 
 void crypto_derive_private_key( const uint32_t*              bip32_path,
