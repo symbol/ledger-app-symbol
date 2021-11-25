@@ -66,7 +66,7 @@
 #define XYM_PKG_GETPUBLICKEY_LENGTH 22
 #define XYM_AGGREGATE_SIGNING_LENGTH 84
 
-void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out, size_t outlen);
+void xym_print_amount(uint64_t amount, uint8_t divisibility, const char *asset, char *out, size_t outlen);
 #ifndef FUZZ
 void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, uint8_t *outPublicKey, char *outAddress, uint8_t outLen);
 #endif

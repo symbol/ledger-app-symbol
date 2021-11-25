@@ -22,7 +22,7 @@
 #include <bsd/string.h>
 #endif // FUZZ
 
-void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out, size_t outlen) {
+void xym_print_amount(uint64_t amount, uint8_t divisibility, const char *asset, char *out, size_t outlen) {
     char buffer[AMOUNT_MAX_SIZE];
     uint64_t dVal = amount;
     int i, j;
@@ -47,7 +47,7 @@ void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *
                 buffer[i] = '0';
             }
         }
-        if (i >= AMOUNT_MAX_SIZE) {
+        if (i >= AMOUNT_MAX_SIZE - 1) {
 #ifdef FUZZ
             return;
 #else
