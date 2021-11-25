@@ -32,14 +32,14 @@ bool buffer_seek(buffer_t *buffer, size_t offset)
 }
 
 
-uint8_t* buffer_offset_ptr( buffer_t* buffer )
+const uint8_t* buffer_offset_ptr( buffer_t* buffer )
 {
     return (buffer->ptr + buffer->offset);
 }
 
-uint8_t* buffer_offset_ptr_and_seek( buffer_t* buffer, size_t n)
+const uint8_t* buffer_offset_ptr_and_seek( buffer_t* buffer, size_t n)
 {
-    uint8_t*   out  = buffer_offset_ptr( buffer );
+    const uint8_t*   out  = buffer_offset_ptr( buffer );
     const bool succ = buffer_seek( buffer, n );
     
     if( !succ ) { out = NULL; }
