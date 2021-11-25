@@ -100,9 +100,9 @@ int snprintf_mosaic(char *dst, uint16_t maxLen, const mosaic_t *mosaic, char *as
     if(snprintf_number(dst, maxLen, mosaic->amount) < 1) {
         return E_NOT_ENOUGH_DATA;
     };
-    strcat(dst, " ");
-    strcat(dst, asset);
-    strcat(dst, " 0x");
+    strlcat(dst, " ", maxLen);
+    strlcat(dst, asset, maxLen);
+    strlcat(dst, " 0x", maxLen);
     uint16_t len = strlen(dst);
     const uint8_t* mosaicId = (const uint8_t*) &mosaic->mosaicId;
     char* mosaicHex = dst + len;

@@ -9,7 +9,7 @@ add_executable(test_transaction_parser
     ../src/xym/format/fields.c
     ../src/xym/format/format.c
     ../src/xym/format/printers.c
-    ../src/xym/format/readers.c    
+    ../src/xym/format/readers.h
     ../src/base32.c
     ../src/buffer.c
 )
@@ -26,7 +26,7 @@ target_compile_options(test_bip32_path_extraction PRIVATE -Wall -Wextra -pedanti
 add_compile_definitions(test_bip32_path_extraction PRIVATE FUZZ)
 
 target_include_directories(test_transaction_parser PRIVATE . ../src ../src/xym)
-target_link_libraries(test_transaction_parser PRIVATE cmocka)
+target_link_libraries(test_transaction_parser PRIVATE bsd cmocka)
 
 target_include_directories(test_bip32_path_extraction PRIVATE . ../src ../src/xym)
-target_link_libraries(test_bip32_path_extraction PRIVATE cmocka)
+target_link_libraries(test_bip32_path_extraction PRIVATE bsd cmocka)

@@ -21,6 +21,10 @@
 #include <stdint.h>
 #include "parse/xym_parse.h"
 
+#if !defined(TARGET_NANOS) && !defined(TARGET_NANOX)
+#include <bsd/string.h>
+#endif
+
 enum _parser_error {
     E_SUCCESS = 0,
     E_NOT_ENOUGH_DATA = -1,

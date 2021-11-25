@@ -18,7 +18,7 @@
 #include "xym_helpers.h"
 #include <string.h>
 
-void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out) {
+void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out, size_t outlen) {
     char buffer[AMOUNT_MAX_SIZE];
     uint64_t dVal = amount;
     int i, j;
@@ -69,7 +69,7 @@ void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *
 
     if (asset && strlen(asset)>0) {
         out[j++] = ' ';
-        strcpy(out + j, asset);
+        strlcpy(out + j, asset, outlen - j);
         out[j+strlen(asset)] = '\0';
     } else {
         out[j] = '\0';
