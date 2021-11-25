@@ -214,7 +214,7 @@ static void address_formatter(const field_t *field, char *dst) {
 
 static void mosaic_formatter(const field_t *field, char *dst) {
     if (field->dataType == STI_MOSAIC_CURRENCY) {
-        mosaic_t* value = (mosaic_t *)field->data;
+        const mosaic_t* value = (const mosaic_t *)field->data;
         bool is_using_mainnet = (transactionContext.bip32Path[1] & 0x7FFFFFFF) == 4343 ? true : false;
         if ((value->mosaicId == (is_using_mainnet ? XYM_MAINNET_MOSAIC_ID : XYM_TESTNET_MOSAIC_ID)) || field->id == XYM_MOSAIC_HL_QUANTITY) {
             xym_print_amount(value->amount, 6, "XYM", dst);

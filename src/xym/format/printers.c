@@ -75,7 +75,7 @@ int snprintf_ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t data
     if (dataLength > maxLen - 1 || maxLen < 1 || dataLength < 1) {
         return E_NOT_ENOUGH_DATA;
     }
-    char *tmpCh = (char *) src;
+    const char *tmpCh = (const char *) src;
     uint16_t k = 0, l = 0;
     for (uint16_t j=0; j < dataLength; j++){
         if (tmpCh[j] < 32 || tmpCh[j] > 126) {
@@ -96,7 +96,7 @@ int snprintf_ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t data
     return l;
 }
 
-int snprintf_mosaic(char *dst, uint16_t maxLen, mosaic_t *mosaic, char *asset) {
+int snprintf_mosaic(char *dst, uint16_t maxLen, const mosaic_t *mosaic, char *asset) {
     if(snprintf_number(dst, maxLen, mosaic->amount) < 1) {
         return E_NOT_ENOUGH_DATA;
     };
@@ -104,7 +104,7 @@ int snprintf_mosaic(char *dst, uint16_t maxLen, mosaic_t *mosaic, char *asset) {
     strcat(dst, asset);
     strcat(dst, " 0x");
     uint16_t len = strlen(dst);
-    uint8_t* mosaicId = (uint8_t*) &mosaic->mosaicId;
+    const uint8_t* mosaicId = (const uint8_t*) &mosaic->mosaicId;
     char* mosaicHex = dst + len;
     if(snprintf_hex(mosaicHex, maxLen - len, mosaicId, sizeof(uint64_t), 1) < 1) {
         return E_NOT_ENOUGH_DATA;
