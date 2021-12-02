@@ -26,7 +26,7 @@
  */
 typedef struct 
 {
-    uint8_t *ptr;    /// Pointer to byte buffer
+    const uint8_t *ptr;    /// Pointer to byte buffer
     size_t   size;   /// Size of 'ptr' array
     size_t   offset; /// Offset in 'ptr' array
 } buffer_t;
@@ -69,7 +69,7 @@ bool buffer_seek(buffer_t* buffer, size_t offset);
  * 
  * @return pointer to current offset within buffer
  */
-uint8_t* buffer_offset_ptr( buffer_t* buffer );
+const uint8_t* buffer_offset_ptr( buffer_t* buffer );
 
 
 /**
@@ -83,7 +83,7 @@ uint8_t* buffer_offset_ptr( buffer_t* buffer );
  * 
  * @return pointer to current offset within buffer
  */
-uint8_t* buffer_offset_ptr_and_seek( buffer_t* buffer, size_t n);
+const uint8_t* buffer_offset_ptr_and_seek( buffer_t* buffer, size_t n);
 
 
 

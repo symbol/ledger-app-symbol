@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include "parse/xym_parse.h"
 
+
 enum _parser_error {
     E_SUCCESS = 0,
     E_NOT_ENOUGH_DATA = -1,
@@ -32,6 +33,6 @@ int snprintf_hex(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLe
 int snprintf_hex2ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength);
 int snprintf_ascii(char *dst, uint16_t maxLen, const uint8_t *src, uint16_t dataLength);
 int snprintf_number(char *dst, uint16_t maxLen, uint64_t value);
-int snprintf_mosaic(char *dst, uint16_t maxLen, mosaic_t *mosaic, char *asset);
+int snprintf_mosaic(char *dst, uint16_t maxLen, const mosaic_t *mosaic, char *asset);
 
 #endif //LEDGER_APP_XYM_PRINTERS_H

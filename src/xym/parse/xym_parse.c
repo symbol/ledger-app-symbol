@@ -197,7 +197,7 @@ static int add_new_field( fields_array_t* fields, uint8_t id, uint8_t data_type,
 static int parse_transfer_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
     // get header
-    txn_header_t *txn = (txn_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(txn_header_t)); // Read data and security check
+    const txn_header_t *txn = (const txn_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(txn_header_t)); // Read data and security check
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
 
     uint32_t length = txn->mosaicsCount * sizeof(mosaic_t) + txn->messageSize;
@@ -224,7 +224,7 @@ static int parse_transfer_txn_content( buffer_t* rawTxData, fields_array_t* fiel
     // Show mosaics amounts
     for( uint8_t i = 0; i < txn->mosaicsCount; i++ ) 
     {
-        mosaic_t* mosaic = (mosaic_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(mosaic_t));
+        const mosaic_t* mosaic = (const mosaic_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(mosaic_t));
         if( !mosaic ){ return E_NOT_ENOUGH_DATA; }
 
 
@@ -315,7 +315,7 @@ static int parse_transfer_txn_content( buffer_t* rawTxData, fields_array_t* fiel
  */
 static int parse_mosaic_definition_txn_content( buffer_t* rawTxData, fields_array_t* fields ) 
 {
-    mosaic_definition_data_t *txn = (mosaic_definition_data_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(mosaic_definition_data_t) ); // Read data and security check
+    const mosaic_definition_data_t *txn = (const mosaic_definition_data_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(mosaic_definition_data_t) ); // Read data and security check
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
 
     BAIL_IF( add_new_field(fields, XYM_UINT64_MOSAIC_ID,       STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->mosaicId)     ); // Show mosaic id
@@ -357,7 +357,7 @@ static int parse_mosaic_definition_txn_content( buffer_t* rawTxData, fields_arra
  */
 static int parse_mosaic_supply_change_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
-    mosaic_supply_change_data_t *txn = (mosaic_supply_change_data_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(mosaic_supply_change_data_t) );
+    const mosaic_supply_change_data_t *txn = (const mosaic_supply_change_data_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(mosaic_supply_change_data_t) );
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
    
     BAIL_IF( add_new_field(fields, XYM_UINT64_MOSAIC_ID,  STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->mosaic.mosaicId) ); // Show mosaic id
@@ -407,7 +407,7 @@ static int parse_mosaic_supply_change_txn_content( buffer_t* rawTxData, fields_a
 static int parse_multisig_account_modification_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
     // get header
-    multisig_account_t *txn = (multisig_account_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(multisig_account_t)); // Read data and security check
+    const multisig_account_t *txn = (const multisig_account_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(multisig_account_t)); // Read data and security check
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
 
     // Show address additions count
@@ -469,7 +469,7 @@ static int parse_multisig_account_modification_txn_content( buffer_t* rawTxData,
 static int parse_namespace_registration_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
     // get header
-    ns_header_t *txn = (ns_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(ns_header_t)); // Read data and security check
+    const ns_header_t *txn = (const ns_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(ns_header_t)); // Read data and security check
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
     
     // extract namespace name
@@ -479,9 +479,9 @@ static int parse_namespace_registration_txn_content( buffer_t* rawTxData, fields
     // create fields from extracted data
     const uint8_t fieldId = ( (txn->registrationType==0) ? XYM_UINT64_DURATION : XYM_UINT64_PARENTID );
 
-    BAIL_IF( add_new_field(fields, XYM_UINT8_NS_REG_TYPE, STI_UINT8,  sizeof(uint8_t),  (uint8_t*) &txn->registrationType) ); // namespace reg type
-    BAIL_IF( add_new_field(fields, XYM_STR_NAMESPACE,     STI_STR,    txn->nameSize,                namespaceName)         ); // namespace/sub-namespace name
-    BAIL_IF( add_new_field(fields, fieldId,               STI_UINT64, sizeof(uint64_t), (uint8_t*) &txn->duration)         ); // duration/parentID
+    BAIL_IF( add_new_field(fields, XYM_UINT8_NS_REG_TYPE, STI_UINT8,  sizeof(uint8_t),  (const uint8_t*) &txn->registrationType) ); // namespace reg type
+    BAIL_IF( add_new_field(fields, XYM_STR_NAMESPACE,     STI_STR,    txn->nameSize,                namespaceName)               ); // namespace/sub-namespace name
+    BAIL_IF( add_new_field(fields, fieldId,               STI_UINT64, sizeof(uint64_t), (const uint8_t*) &txn->duration)         ); // duration/parentID
     
     return E_SUCCESS;
 }
@@ -519,7 +519,7 @@ static int parse_namespace_registration_txn_content( buffer_t* rawTxData, fields
 static int parse_account_metadata_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
     // get header
-    am_header_t *txn = (am_header_t*) buffer_offset_ptr_and_seek(rawTxData, sizeof(am_header_t));  // get fee
+    const am_header_t *txn = (const am_header_t*) buffer_offset_ptr_and_seek(rawTxData, sizeof(am_header_t));  // get fee
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
 
     // create fields from extracted data
@@ -567,7 +567,7 @@ static int parse_account_metadata_txn_content( buffer_t* rawTxData, fields_array
 static int parse_metadata_txn_content( buffer_t* rawTxData, uint8_t id, fields_array_t* fields )
 {
     // get header    
-    mnm_header_t* txn = (mnm_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(mnm_header_t));
+    const mnm_header_t* txn = (const mnm_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(mnm_header_t));
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
 
     // get value
@@ -624,7 +624,7 @@ static int parse_namespace_metadata_txn_content( buffer_t* rawTxData, fields_arr
 static int parse_address_alias_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {   
     // get header
-    aa_header_t *txn = (aa_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(aa_header_t)); // Read data and security check
+    const aa_header_t *txn = (const aa_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(aa_header_t)); // Read data and security check
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
     
     // create fields from extracted data
@@ -668,7 +668,7 @@ static int parse_address_alias_txn_content( buffer_t* rawTxData, fields_array_t*
 static int parse_mosaic_alias_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
     // get header
-    ma_header_t *txn = (ma_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(ma_header_t));
+    const ma_header_t *txn = (const ma_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(ma_header_t));
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
     
     // create fields from extracted data
@@ -723,7 +723,7 @@ static int parse_mosaic_alias_txn_content( buffer_t* rawTxData, fields_array_t* 
 static int parse_account_restriction_txn_content( buffer_t* rawTxData, uint8_t restrictionType, fields_array_t* fields )
 {
     // get header
-    ar_header_t *txn = (ar_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(ar_header_t)); // Read data and security check
+    const ar_header_t *txn = (const ar_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(ar_header_t)); // Read data and security check
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
     
     // Show address/mosaicId additions count
@@ -829,7 +829,7 @@ static int parse_account_operation_restriction_txn_content( buffer_t* rawTxData,
 static int parse_key_link_txn_content( buffer_t* rawTxData, uint8_t txType, fields_array_t* fields )
 {
     // get header
-    key_link_header_t *txn = (key_link_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(key_link_header_t)); // Read data and security check
+    const key_link_header_t *txn = (const key_link_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(key_link_header_t)); // Read data and security check
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
     
     // create fields from extracted data
@@ -886,7 +886,7 @@ static int parse_vrf_key_link_txn_content( buffer_t* rawTxData, fields_array_t* 
 static int parse_voting_key_link_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
     // get header
-    voting_key_link_header_t* txn = (voting_key_link_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(voting_key_link_header_t)); // Read data and security check
+    const voting_key_link_header_t* txn = (const voting_key_link_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(voting_key_link_header_t)); // Read data and security check
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
     
     // create fields from extracted data
@@ -931,7 +931,7 @@ static int parse_voting_key_link_txn_content( buffer_t* rawTxData, fields_array_
 static int parse_fund_lock_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
     // get header
-    fl_header_t *txn = (fl_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(fl_header_t)); // Read data and security check
+    const fl_header_t *txn = (const fl_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(fl_header_t)); // Read data and security check
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
         
     // add fields    
@@ -946,8 +946,7 @@ static int parse_fund_lock_txn_content( buffer_t* rawTxData, fields_array_t* fie
 static int parseWithFee( buffer_t* rawTxData, fields_array_t* fields, int (*parser)(buffer_t* b, fields_array_t* f) )
 {
     // get fee
-    txn_fee_t *fee = NULL;
-    fee = (txn_fee_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(txn_fee_t)); // get fee
+    const txn_fee_t *fee = (const txn_fee_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(txn_fee_t)); // get fee
     if( !fee ) { return E_NOT_ENOUGH_DATA; }
 
 
@@ -969,7 +968,7 @@ static int parse_inner_txn_content( buffer_t* rawTxData, uint32_t len, bool isCo
     do 
     {
         // get header
-        inner_tx_header_t *txn = (inner_tx_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(inner_tx_header_t) ); // Read data and security check
+        const inner_tx_header_t *txn = (const inner_tx_header_t*) buffer_offset_ptr_and_seek( rawTxData, sizeof(inner_tx_header_t) ); // Read data and security check
         if( !txn ) { return E_NOT_ENOUGH_DATA; }
 
         totalSize += txn->size;
@@ -1021,7 +1020,7 @@ static int parse_inner_txn_content( buffer_t* rawTxData, uint32_t len, bool isCo
 static int parse_aggregate_txn_content( buffer_t* rawTxData, fields_array_t* fields )
 {
     // get aggregate header
-    aggregate_txn_t *txn = (aggregate_txn_t*) buffer_offset_ptr_and_seek(rawTxData, sizeof(aggregate_txn_t));
+    const aggregate_txn_t *txn = (const aggregate_txn_t*) buffer_offset_ptr_and_seek(rawTxData, sizeof(aggregate_txn_t));
     if( !txn ) { return E_NOT_ENOUGH_DATA; }
 
     bool isCosigning = (transactionContext.rawTxLength == XYM_TRANSACTION_HASH_LENGTH);
@@ -1037,7 +1036,7 @@ static int parse_aggregate_txn_content( buffer_t* rawTxData, fields_array_t* fie
 
 
 
-static int parse_txn_detail( buffer_t *rawTxData, common_header_t *txn, fields_array_t* fields ) 
+static int parse_txn_detail( buffer_t *rawTxData, const common_header_t *txn, fields_array_t* fields )
 {
     int result;
     fields->numFields = 0;
@@ -1120,7 +1119,7 @@ static void set_sign_data_length( const buffer_t* rawTxdata, uint16_t transactio
 int parse_txn_context( buffer_t* rawTxdata, fields_array_t* fields )
 {
     // get common header
-    common_header_t* txnHeader = (common_header_t*) buffer_offset_ptr( rawTxdata );
+    const common_header_t* txnHeader = (const common_header_t*) buffer_offset_ptr( rawTxdata );
     
     // move buffer offset to next data
     const bool succ = buffer_seek( rawTxdata, sizeof(common_header_t) );

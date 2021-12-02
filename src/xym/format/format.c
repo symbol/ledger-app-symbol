@@ -201,7 +201,7 @@ static void uint64_formatter(const field_t *field, char *dst) {
             SNPRINTF(dst, "%d%s%d%s%d%s", day, "d ", hour, "h ", min, "m");
         }
     } else if (field->id == XYM_UINT64_MSC_AMOUNT) {
-        xym_print_amount(read_uint64(field->data), 0, "", dst);
+        xym_print_amount(read_uint64(field->data), 0, "", dst, MAX_FIELD_LEN);
     } else {
         snprintf_hex(dst, MAX_FIELD_LEN, field->data, field->length, 1);
     }
@@ -214,10 +214,10 @@ static void address_formatter(const field_t *field, char *dst) {
 
 static void mosaic_formatter(const field_t *field, char *dst) {
     if (field->dataType == STI_MOSAIC_CURRENCY) {
-        mosaic_t* value = (mosaic_t *)field->data;
+        const mosaic_t* value = (const mosaic_t *)field->data;
         bool is_using_mainnet = (transactionContext.bip32Path[1] & 0x7FFFFFFF) == 4343 ? true : false;
         if ((value->mosaicId == (is_using_mainnet ? XYM_MAINNET_MOSAIC_ID : XYM_TESTNET_MOSAIC_ID)) || field->id == XYM_MOSAIC_HL_QUANTITY) {
-            xym_print_amount(value->amount, 6, "XYM", dst);
+            xym_print_amount(value->amount, 6, "XYM", dst, MAX_FIELD_LEN);
         } else {
             snprintf_mosaic(dst, MAX_FIELD_LEN, value, "micro");
         }
@@ -226,7 +226,7 @@ static void mosaic_formatter(const field_t *field, char *dst) {
 
 static void xym_formatter(const field_t *field, char *dst) {
     if (field->dataType == STI_XYM) {
-        xym_print_amount(read_uint64(field->data), 6, "XYM", dst);
+        xym_print_amount(read_uint64(field->data), 6, "XYM", dst, MAX_FIELD_LEN);
     }
 }
 

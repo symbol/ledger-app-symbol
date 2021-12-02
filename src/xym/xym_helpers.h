@@ -21,8 +21,10 @@
 #include <os.h>
 #include <cx.h>
 #include <os_io_seproxyhal.h>
-#endif
+#endif // FUZZ
+
 #include <stdbool.h>
+#include <stddef.h>
 
 #define XYM_TXN_TRANSFER 0x4154
 #define XYM_TXN_REGISTER_NAMESPACE 0x414E
@@ -64,7 +66,7 @@
 #define XYM_PKG_GETPUBLICKEY_LENGTH 22
 #define XYM_AGGREGATE_SIGNING_LENGTH 84
 
-void xym_print_amount(uint64_t amount, uint8_t divisibility, char *asset, char *out);
+void xym_print_amount(uint64_t amount, uint8_t divisibility, const char *asset, char *out, size_t outlen);
 #ifndef FUZZ
 void xym_public_key_and_address(cx_ecfp_public_key_t *inPublicKey, uint8_t inNetworkId, uint8_t *outPublicKey, char *outAddress, uint8_t outLen);
 #endif

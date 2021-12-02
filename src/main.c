@@ -88,7 +88,7 @@ void xym_main(void)
 // override point, but nothing more to do
 void io_seproxyhal_display(const bagl_element_t *element) 
 {
-    io_seproxyhal_display_default((bagl_element_t *)element);
+    io_seproxyhal_display_default(element);
 }
 
 unsigned char io_event(unsigned char channel) 
