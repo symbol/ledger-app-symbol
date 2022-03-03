@@ -257,7 +257,7 @@ static int parse_transfer_txn_content( buffer_t* rawTxData, fields_array_t* fiel
         if (*msgType == XYM_PERSISTENT_DELEGATED_HARVESTING) // TODO: just do one read in a new buffer_t above, and use that below, instead of doing multiple seeks
         {
             // Show persistent harvesting delegation message
-        #if defined(TARGET_NANOX)
+        #if defined(TARGET_NANOX) || defined(TARGET_NANOS2)
             BAIL_IF( add_new_field(fields, XYM_STR_TXN_HARVESTING, STI_HEX_MESSAGE, txn->messageSize,      buffer_offset_ptr_and_seek( rawTxData, txn->messageSize)) );
         #elif defined(TARGET_NANOS)
             BAIL_IF( add_new_field(fields, XYM_STR_TXN_HARVESTING_1, STI_HEX_MESSAGE, MAX_FIELD_LEN/2 - 1,                  buffer_offset_ptr_and_seek( rawTxData, MAX_FIELD_LEN/2 - 1)) ); 
