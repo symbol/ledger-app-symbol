@@ -151,7 +151,7 @@ void app_exit(void) {
         FINALLY_L(exit) {
         }
     }
-    END_TRY_L(exit)
+    END_TRY_L(exit);
 }
 
 __attribute__((section(".boot"))) int main(void) {

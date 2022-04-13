@@ -80,7 +80,7 @@ void sign_transaction()
             reset_transaction_context();
         }
     }
-    END_TRY
+    END_TRY;
 
     // send response
     buffer_t response = { signature, sigLength, 0 };

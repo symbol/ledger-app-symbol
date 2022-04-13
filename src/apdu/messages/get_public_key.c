@@ -163,7 +163,7 @@ void get_public_key( KeyData_t* keyData, uint8_t key[ XYM_PUBLIC_KEY_LENGTH ], c
             explicit_bzero( &privateKey, sizeof(privateKey) );
         }
     }
-    END_TRY
+    END_TRY;
 }
 
 
